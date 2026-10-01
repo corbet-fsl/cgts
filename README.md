@@ -74,3 +74,9 @@ snapshots, fresh clocks and trust roots. See the contract for precise limits.
 
 Copyright 2026 Julian Y. Richard Corbet. Licensed under the
 [Functional Source License, Version 1.1, ALv2 Future License](LICENSE.md).
+
+## Continuous verification
+
+Dependency updates follow main and are tested against one CI-resolved lockfile.
+Line and branch coverage target 100%; failures remain blocking. See
+[the coverage contract](docs/COVERAGE.md) for measurement and exclusions.
