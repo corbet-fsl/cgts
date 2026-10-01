@@ -153,23 +153,22 @@ impl LibsqlStore {
 
     /// Check every production query/write shape against real SQLite query plans.
     pub async fn check_query_plans(&self) -> Result<()> {
-        self.db.explain(LOAD, ["subject"]).await?.assert_indexed()?;
-        self.db
-            .explain(DELETE, params!["subject", "gate", "provider"])
-            .await?
-            .assert_indexed()?;
-        self.db
-            .explain(INSERT, params!["subject", "gate", "provider", 1i64])
-            .await?
-            .assert_indexed()?;
-        self.db
-            .explain(CLAIM, params!["gate", vec![0u8]])
-            .await?
-            .assert_indexed()?;
-        self.db
-            .explain(SPEND, params!["gate", vec![0u8]])
-            .await?
-            .assert_indexed()?;
+        let plans = [
+            (LOAD, Vec::from(params!["subject"])),
+            (DELETE, Vec::from(params!["subject", "gate", "provider"])),
+            (
+                INSERT,
+                Vec::from(params!["subject", "gate", "provider", 1i64]),
+            ),
+            (CLAIM, Vec::from(params!["gate", vec![0u8]])),
+            (SPEND, Vec::from(params!["gate", vec![0u8]])),
+        ];
+        for (statement, parameters) in plans {
+            self.db
+                .explain(statement, parameters)
+                .await?
+                .assert_indexed()?;
+        }
         Ok(())
     }
 }
@@ -246,3 +245,7 @@ impl Storage for LibsqlStore {
         Ok(())
     }
 }
+
+#[cfg(test)]
+#[path = "tests/storage.rs"]
+mod tests;

@@ -24,9 +24,13 @@ pub struct VoucherGate {
 
 impl VoucherGate {
     /// The service checks sponsorship authority before choosing this key.
-    pub fn new(provider: impl Into<String>, sponsor: ed25519_dalek::VerifyingKey) -> Result<Self> {
+    /// Accepts the trusted 32-byte Ed25519 public key or a maintained key type
+    /// exposing those bytes, independently of its library version.
+    pub fn new(provider: impl Into<String>, sponsor: impl AsRef<[u8]>) -> Result<Self> {
         let provider = provider.into();
         component(&provider)?;
+        let bytes = sponsor.as_ref().try_into().map_err(|_| Error::Invalid)?;
+        let sponsor = ed25519_dalek::VerifyingKey::from_bytes(bytes).map_err(|_| Error::Invalid)?;
         Ok(Self { provider, sponsor })
     }
 }

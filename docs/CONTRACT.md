@@ -55,10 +55,10 @@ precision binds the current profile operation and is never persisted. It cannot
 become a reusable badge after a profile edit. A public projection cannot satisfy
 a full-profile requirement.
 
-BalanceGate and RecordGate pin the current reviewed cblc stack, but the runner
+BalanceGate and RecordGate follow the current cblc main stack, but the runner
 refuses the reserved `cblc` gate with `ExtensionsUnavailable` before invoking any
 provider. Signed acceptance alone is insufficient to prove the complete private
-extension relation. There is no feature that bypasses this guard. The pinned leaf now
+extension relation. There is no feature that bypasses this guard. The leaf now
 has real extension proof tests; facade activation still requires the verified
 acceptance and atomic pin-transition integration. No successful
 balance change permission can currently be minted by these adapters.

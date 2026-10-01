@@ -365,6 +365,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4c7f02d4ea65f2c1853089ffd8d2787bdbc63de2f0d29dedbcf8ccdfa0ccd4cf"
 
 [[package]]
+name = "base16ct"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fd307490d624467aa6f74b0eabb77633d1f758a7b25f12bceb0b22e08d9726f6"
+
+[[package]]
 name = "base64"
 version = "0.21.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -636,7 +642,7 @@ dependencies = [
 [[package]]
 name = "cblc"
 version = "0.0.0"
-source = "git+https://github.com/corbet-libs/cblc?rev=6d66b8d353d2054a54c164c8e186137a42ade4ab#6d66b8d353d2054a54c164c8e186137a42ade4ab"
+source = "git+https://github.com/corbet-libs/cblc?branch=main#8ec49ce8a7401232ddbe1db7ef1edec03d4863f9"
 dependencies = [
  "cpns",
  "crlt",
@@ -688,13 +694,15 @@ checksum = "f079e83a288787bcd14a6aea84cee5c87a67c5a3e660c30f557a3d24761b3527"
 [[package]]
 name = "cgrd"
 version = "0.0.0"
-source = "git+https://github.com/corbet-foss/cgrd?rev=ff83c2b3fe786feb9b8c5f459b828ea1db4e6449#ff83c2b3fe786feb9b8c5f459b828ea1db4e6449"
+source = "git+https://github.com/corbet-foss/cgrd?branch=main#d1cacbdb863534183d27de468359f657aa7174fa"
 dependencies = [
  "bigdecimal",
  "cpns",
+ "crbk",
  "csgn",
  "cshm",
  "ed25519-dalek 3.0.0",
+ "geographiclib-rs",
  "precis-profiles",
  "rustrict",
  "serde",
@@ -718,6 +726,8 @@ dependencies = [
  "cvch",
  "data-encoding",
  "ed25519-dalek 2.2.0",
+ "ed25519-dalek 3.0.0",
+ "libsql",
  "rand 0.8.8",
  "serde",
  "serde_json",
@@ -813,7 +823,7 @@ dependencies = [
 [[package]]
 name = "clbs"
 version = "0.0.0"
-source = "git+https://github.com/corbet-foss/clbs?rev=873f2dd7388c6d5e025a27b4c55447c4b4892a2d#873f2dd7388c6d5e025a27b4c55447c4b4892a2d"
+source = "git+https://github.com/corbet-foss/clbs?branch=main#2dd4867a3e0a9705d1a2310e2bd7d74b1e345538"
 dependencies = [
  "crlt",
  "serde",
@@ -924,7 +934,7 @@ dependencies = [
 [[package]]
 name = "cpns"
 version = "0.0.0"
-source = "git+https://github.com/corbet-foss/cpns?rev=d68a3f3a2df322c513d0e754e452ee02aab7a5b9#d68a3f3a2df322c513d0e754e452ee02aab7a5b9"
+source = "git+https://github.com/corbet-foss/cpns?branch=main#71145788c12f25a5f6c89437e9e217dea4480a4b"
 dependencies = [
  "crlt",
  "getrandom 0.4.3",
@@ -936,7 +946,7 @@ dependencies = [
 [[package]]
 name = "cpsd"
 version = "0.0.0"
-source = "git+https://github.com/corbet-foss/cpsd?rev=0d314b97bce9aeaffb5424159e8255ce34acee1e#0d314b97bce9aeaffb5424159e8255ce34acee1e"
+source = "git+https://github.com/corbet-foss/cpsd?branch=main#a23616e906ffa924aa5bda667e7ea1edf3a692d4"
 dependencies = [
  "ark-bls12-381",
  "ark-ec",
@@ -952,6 +962,7 @@ dependencies = [
  "getrandom 0.2.17",
  "js-sys",
  "proof_system",
+ "rand_chacha 0.3.1",
  "wasm-bindgen",
  "zeroize",
 ]
@@ -1066,7 +1077,7 @@ checksum = "56b08621c00321efcfa3eee6a3179adc009e21ea8d24ca7adc3c326184bc3f48"
 [[package]]
 name = "crbk"
 version = "0.0.0"
-source = "git+https://github.com/corbet-foss/crbk?rev=954c17762df251c1354bd9303354d82b0a81e487#954c17762df251c1354bd9303354d82b0a81e487"
+source = "git+https://github.com/corbet-foss/crbk?branch=main#2811a5e1614fbdcd03b493dc8af0e901633d2e5e"
 dependencies = [
  "crlt",
  "serde",
@@ -1086,7 +1097,7 @@ dependencies = [
 [[package]]
 name = "crlt"
 version = "0.0.0"
-source = "git+https://github.com/corbet-foss/crlt?rev=80dc046d6ab53b3ea530c45bf3d7038c8b2c61b2#80dc046d6ab53b3ea530c45bf3d7038c8b2c61b2"
+source = "git+https://github.com/corbet-foss/crlt?branch=main#ad4aaaa8fee61dea4858b3ed6be496b67db7f856"
 dependencies = [
  "deadpool",
  "libsql",
@@ -1173,7 +1184,7 @@ dependencies = [
 [[package]]
 name = "csgn"
 version = "0.0.0"
-source = "git+https://github.com/corbet-foss/csgn?rev=3ea958b522a15fecf65630aae1f9944135105497#3ea958b522a15fecf65630aae1f9944135105497"
+source = "git+https://github.com/corbet-foss/csgn?branch=main#96f946b89efd67d79f841259ee914a4f6f43dcd0"
 dependencies = [
  "ciborium-ll",
  "coset",
@@ -1186,7 +1197,7 @@ dependencies = [
 [[package]]
 name = "cshm"
 version = "0.0.0"
-source = "git+https://github.com/corbet-foss/cshm?rev=01e259cad7e64cb2150344153ae350a23d05f478#01e259cad7e64cb2150344153ae350a23d05f478"
+source = "git+https://github.com/corbet-foss/cshm?branch=main#2fddfc89a3e3503df1430cd22eaf090ca52bc694"
 dependencies = [
  "bigdecimal",
  "jsonschema",
@@ -1198,7 +1209,7 @@ dependencies = [
 [[package]]
 name = "cssr"
 version = "0.0.0"
-source = "git+https://github.com/corbet-foss/cssr?rev=6dbff220fc47dfb6e44403ecde9eb3af13cd75f5#6dbff220fc47dfb6e44403ecde9eb3af13cd75f5"
+source = "git+https://github.com/corbet-foss/cssr?branch=main#c489601d07d18d4b34e249f40137c01baf535bd8"
 dependencies = [
  "crlt",
  "p256",
@@ -1209,7 +1220,7 @@ dependencies = [
 [[package]]
 name = "cthl"
 version = "0.0.0"
-source = "git+https://github.com/corbet-foss/cthl?rev=a41533a255cefc0757078205bff87c03e6c7bbbe#a41533a255cefc0757078205bff87c03e6c7bbbe"
+source = "git+https://github.com/corbet-foss/cthl?branch=main#ce5eabb53b14a1c2936bfbcc3ba2a182e16a3502"
 dependencies = [
  "governor",
 ]
@@ -1260,19 +1271,19 @@ dependencies = [
 [[package]]
 name = "cvch"
 version = "0.2.1"
-source = "git+https://github.com/corbet-foss/cvch?rev=37ee0cba6c8be767c8e8ecd286ec225a21b564e1#37ee0cba6c8be767c8e8ecd286ec225a21b564e1"
+source = "git+https://github.com/corbet-foss/cvch?branch=main#11a4dccd3405dfcfb9cf1092167869351aa0da95"
 dependencies = [
- "ed25519-dalek 2.2.0",
+ "ed25519-dalek 3.0.0",
  "serde",
  "serde_json",
- "sha2 0.10.9",
+ "sha2 0.11.0",
  "thiserror 2.0.21",
 ]
 
 [[package]]
 name = "cvfy"
 version = "0.0.0"
-source = "git+https://github.com/corbet-foss/cvfy?rev=5b31dde13fd9bafc115dbc8ff7f51cccc3debf29#5b31dde13fd9bafc115dbc8ff7f51cccc3debf29"
+source = "git+https://github.com/corbet-foss/cvfy?branch=main#b5749ac38ea444d963bf0d979523c04839e4ceeb"
 dependencies = [
  "czkp",
  "data-encoding",
@@ -1283,12 +1294,12 @@ dependencies = [
 [[package]]
 name = "czkp"
 version = "0.0.0"
-source = "git+https://github.com/corbet-foss/czkp?rev=e1782da1f7193a26ca0aea23137784896b780c03#e1782da1f7193a26ca0aea23137784896b780c03"
+source = "git+https://github.com/corbet-foss/czkp?branch=main#f7547de05c0c38f96c0622ca2eea0419e977fe4a"
 dependencies = [
  "data-encoding",
- "ed25519-dalek 2.2.0",
+ "ed25519-dalek 3.0.0",
  "serde",
- "sha2 0.10.9",
+ "sha2 0.11.0",
 ]
 
 [[package]]
@@ -1560,7 +1571,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "115531babc129696a58c64a4fef0a8bf9e9698629fb97e9e40767d235cfbcd53"
 dependencies = [
  "pkcs8",
- "serde",
  "signature 2.2.0",
 ]
 
@@ -1570,6 +1580,7 @@ version = "3.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "29fcf32e6c73d1079f83ab4d782de2d81620346a5f38c6237a86a22f8368980a"
 dependencies = [
+ "serdect",
  "signature 3.0.0",
 ]
 
@@ -1595,6 +1606,7 @@ checksum = "6ebaa1a2bf1290ab3bfe5a7b771d050ebffab2711c19a81691c683a5144a25de"
 dependencies = [
  "curve25519-dalek 5.0.0",
  "ed25519 3.0.0",
+ "serde",
  "sha2 0.11.0",
  "subtle",
  "zeroize",
@@ -1612,7 +1624,7 @@ version = "0.13.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b5e6043086bf7973472e0c7dff2142ea0b680d30e18d9cc40f267efbf222bd47"
 dependencies = [
- "base16ct",
+ "base16ct 0.2.0",
  "crypto-bigint",
  "digest 0.10.7",
  "ff",
@@ -1924,6 +1936,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "geographiclib-rs"
+version = "0.2.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c5a7f08910fd98737a6eda7568e7c5e645093e073328eeef49758cfe8b0489c7"
+dependencies = [
+ "libm",
+]
+
+[[package]]
 name = "getrandom"
 version = "0.2.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2208,7 +2229,7 @@ dependencies = [
  "libc",
  "percent-encoding",
  "pin-project-lite",
- "socket2 0.6.5",
+ "socket2",
  "tokio",
  "tower-service",
  "tracing",
@@ -2462,9 +2483,9 @@ dependencies = [
 
 [[package]]
 name = "jsonschema"
-version = "0.58.2"
+version = "0.58.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "657c6a38b0e00dda091d9c006cc1741957ba2377f00dccfd6e79df4c95619bb1"
+checksum = "5761b0ca0a31464030d7c2a98087fde3124ebb5e09b5a112cdb815f03b8ee150"
 dependencies = [
  "ahash",
  "bytecount",
@@ -2492,9 +2513,9 @@ dependencies = [
 
 [[package]]
 name = "jsonschema-macros"
-version = "0.58.2"
+version = "0.58.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e2a69dfc7e9b2accaa8285e37f99b09e533026a6e16678f9e9dc902b9a47e578"
+checksum = "75e6d7c2c9afe6aa7de831af841801c954b83b1742f0e228b505326456a70b8f"
 dependencies = [
  "jsonschema-macros-core",
  "proc-macro2",
@@ -2502,9 +2523,9 @@ dependencies = [
 
 [[package]]
 name = "jsonschema-macros-core"
-version = "0.58.2"
+version = "0.58.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "84287770d96c394d39693aff7a7a9ee3d12e4416456f4b225dd4f84554d642d5"
+checksum = "65bcdd5a5c9e2c6ddefdddef36f1a27f5183649bd135f633e1bc6bfa97982407"
 dependencies = [
  "fancy-regex",
  "indexmap",
@@ -2521,18 +2542,18 @@ dependencies = [
 
 [[package]]
 name = "jsonschema-regex"
-version = "0.58.2"
+version = "0.58.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "599c68ae272eac23e6525c3fc04a39828ae4a0d76d1fb5ba0e23a6241fd5cbfe"
+checksum = "f1ffba4378a3d6ee7f1ab65a8ed95c711ccfe4a3870932bdce89d8260abed38a"
 dependencies = [
  "regex-syntax",
 ]
 
 [[package]]
 name = "jsonschema-value"
-version = "0.58.2"
+version = "0.58.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9097316258ece14ed6908011db130c54a11a5bd0c46472b1fe112c8c86261263"
+checksum = "386121f898b560ff6aaa7974952720e9d9276a201eca31296387c2ed8707855e"
 dependencies = [
  "ahash",
  "bytecount",
@@ -2576,9 +2597,9 @@ dependencies = [
 
 [[package]]
 name = "lazy_static"
-version = "1.5.0"
+version = "1.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bbd2bcb4c963f2ddae06a2efc7e9f3591312473c50c6685e1f298068316e66fe"
+checksum = "20870f649af7073d53e38067b2a84312175d56ea15217e1b15bc83506ec50afb"
 
 [[package]]
 name = "lazycell"
@@ -3355,7 +3376,7 @@ dependencies = [
  "quinn-udp",
  "rustc-hash 2.1.3",
  "rustls",
- "socket2 0.5.10",
+ "socket2",
  "thiserror 2.0.21",
  "tokio",
  "tracing",
@@ -3394,9 +3415,9 @@ dependencies = [
  "cfg_aliases",
  "libc",
  "once_cell",
- "socket2 0.5.10",
+ "socket2",
  "tracing",
- "windows-sys 0.52.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -3585,9 +3606,9 @@ dependencies = [
 
 [[package]]
 name = "referencing"
-version = "0.58.2"
+version = "0.58.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ddfcda65789fdadcc3ddde7b127bd2272deb3fc97fddb4fc94a499f839989990"
+checksum = "5cfa1c91745dbca76a406b926918d7c63e15a4525ebab939fec3e015a1fb82b1"
 dependencies = [
  "ahash",
  "fluent-uri",
@@ -3882,7 +3903,7 @@ dependencies = [
  "security-framework",
  "security-framework-sys",
  "webpki-root-certs",
- "windows-sys 0.52.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -4005,7 +4026,7 @@ version = "0.7.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d3e97a565f76233a6003f9f5c54be1d9c5bdfa3eccfb189469f11ec4901c47dc"
 dependencies = [
- "base16ct",
+ "base16ct 0.2.0",
  "der",
  "generic-array",
  "pkcs8",
@@ -4141,6 +4162,16 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 1.0.109",
+]
+
+[[package]]
+name = "serdect"
+version = "0.4.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "66cf8fedced2fcf12406bcb34223dffb92eaf34908ede12fed414c82b7f00b3e"
+dependencies = [
+ "base16ct 1.0.0",
+ "serde",
 ]
 
 [[package]]
@@ -4289,16 +4320,6 @@ dependencies = [
  "schnorr_pok",
  "short_group_sig",
  "zeroize",
-]
-
-[[package]]
-name = "socket2"
-version = "0.5.10"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e22376abed350d73dd1cd119b57ffccad95b4e585a7cda43e286245ce23c0678"
-dependencies = [
- "libc",
- "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -4559,7 +4580,7 @@ dependencies = [
  "libc",
  "mio",
  "pin-project-lite",
- "socket2 0.6.5",
+ "socket2",
  "tokio-macros",
  "windows-sys 0.61.2",
 ]
@@ -5008,12 +5029,12 @@ dependencies = [
 
 [[package]]
 name = "wasm-encoder"
-version = "0.259.0"
+version = "0.260.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b1d0246511d901aacf25d2dc9111f0054947de5e093fe662099e709ff7530dc3"
+checksum = "e1e9692da9ef627c5ee12b45378f68ac2689ce306f88078f5cf849b7c3444ed8"
 dependencies = [
  "leb128fmt",
- "wasmparser 0.259.0",
+ "wasmparser 0.260.0",
 ]
 
 [[package]]
@@ -5172,9 +5193,9 @@ dependencies = [
 
 [[package]]
 name = "wasmparser"
-version = "0.259.0"
+version = "0.260.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0f7c12eac7bb587801590f6a67ff0bc84d0748513864b71108e4b311cc3df694"
+checksum = "4c94519d78304dc4a4bb5925eda6ff153bf06167467cff9233dc9593bae28fdd"
 dependencies = [
  "bitflags 2.13.2",
  "indexmap",
@@ -5183,9 +5204,9 @@ dependencies = [
 
 [[package]]
 name = "wast"
-version = "259.0.0"
+version = "260.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c69beba8d9da07af9a0971b559149a2ac4729895b55144de4fddbf5a02660648"
+checksum = "17573754cde137d26852892330414efb6d1d33480adcd10e8825d092b2132229"
 dependencies = [
  "bumpalo",
  "leb128fmt",
@@ -5196,9 +5217,9 @@ dependencies = [
 
 [[package]]
 name = "wat"
-version = "1.259.0"
+version = "1.260.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c6eec44b0c80391b20fb7ad9ea440c72c5d382385bdf74444bb18321c425017e"
+checksum = "5f56de9341c410d04121da51dd16c11d095cb6a914bd2b2850cd3c60558c0c15"
 dependencies = [
  "wast",
 ]
@@ -5250,7 +5271,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.52.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -5400,9 +5421,9 @@ dependencies = [
 
 [[package]]
 name = "yoke-derive"
-version = "0.8.3"
+version = "0.8.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "33811428bee40dbceb6d545e95754741d17a6aef9a4849f0fd62e2ba4f412a78"
+checksum = "ec8ebde2db3681e8c9980cc27822030e68752690ddfa9473e739aeb4dbde6d71"
 dependencies = [
  "proc-macro2",
  "quote",
