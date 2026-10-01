@@ -4,6 +4,7 @@ use cgts::*;
 use common::*;
 
 async fn round_trip<S: Storage, L: LegalVeto>(keeper: Gatekeeper<S, L>) {
+    assert_eq!(keeper.community(), "garden");
     let snapshot = snapshot("garden", "cvch");
     let context = context(&snapshot);
     assert!(keeper.collect(context).await.unwrap().is_empty());

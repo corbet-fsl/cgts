@@ -80,6 +80,11 @@ impl<S: Storage, L: LegalVeto> Gatekeeper<S, L> {
         Ok(Self { store, legal })
     }
 
+    /// Immutable community shared by this gatekeeper's storage and legal veto.
+    pub fn community(&self) -> &str {
+        self.store.community()
+    }
+
     /// Only enabled community gates/providers appear in the lobby.
     pub async fn steps(
         &self,
