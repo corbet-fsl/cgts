@@ -39,8 +39,11 @@ Actual browser/device execution remains separate from native coverage.
 ## Proposed invariant exceptions
 
 These exact exceptions require independent review. They do not qualify disabled
-pin-spend integration. Each is bound to complete local source and the retained
-Cargo.lock, so source or upstream graph changes require rechecking the proof.
+pin-spend integration. Each is bound to complete local source. Proofs that depend on CRBK or CGRD
+additionally bind that exact crate identity in the retained Cargo.lock; the checker
+requires exactly one matching package/version/full Git source. A change to the
+actual proof dependency requires review. Other dependency updates still undergo
+the complete real CI suite, without invalidating an unrelated immutable-type proof.
 JSON, LCOV and annotated source inventories must agree before exclusions; every
 emitted line/arm must still exist and remain unexecuted. Real imported scan-plan,
 subject/level corruption, signed expiry, duplicate receipt and leaf refusal cases
@@ -80,3 +83,8 @@ revision per crate. The exception hashes are evidence checks, not immutable Git
 rev declarations or permission to ignore updates. A green adjusted metric means
 all non-excluded production locations executed; mandatory review and the sealed
 G2 integration blocker remain separate acceptance requirements.
+
+The shared checker now has17 regression methods, including changed, duplicate,
+missing and malformed proof dependencies and independent unrelated lock updates.
+These revision-bound evidence assertions qualify exceptions only; Cargo manifests
+still follow main and the first-party policy still requires one revision per crate.

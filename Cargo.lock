@@ -823,7 +823,7 @@ dependencies = [
 [[package]]
 name = "clbs"
 version = "0.0.0"
-source = "git+https://github.com/corbet-foss/clbs?branch=main#2dd4867a3e0a9705d1a2310e2bd7d74b1e345538"
+source = "git+https://github.com/corbet-foss/clbs?branch=main#23bf4db58f06c902a76619974ff7eac7329916f0"
 dependencies = [
  "crlt",
  "serde",
@@ -1220,7 +1220,7 @@ dependencies = [
 [[package]]
 name = "cthl"
 version = "0.0.0"
-source = "git+https://github.com/corbet-foss/cthl?branch=main#ce5eabb53b14a1c2936bfbcc3ba2a182e16a3502"
+source = "git+https://github.com/corbet-foss/cthl?branch=main#4b4d5ff5308619e79341b308e8ee306f53a75edb"
 dependencies = [
  "governor",
 ]
