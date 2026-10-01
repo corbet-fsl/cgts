@@ -58,8 +58,9 @@ a full-profile requirement.
 BalanceGate and RecordGate pin the current reviewed cblc stack, but the runner
 refuses the reserved `cblc` gate with `ExtensionsUnavailable` before invoking any
 provider. Signed acceptance alone is insufficient to prove the complete private
-extension relation. There is no feature that bypasses this guard. The extension
-circuit and its proof tests must be complete before activation. No successful
+extension relation. There is no feature that bypasses this guard. The pinned leaf now
+has real extension proof tests; facade activation still requires the verified
+acceptance and atomic pin-transition integration. No successful
 balance change permission can currently be minted by these adapters.
 
 LegalGate delegates exact-action checks to clbs. It applies even when action
@@ -109,8 +110,9 @@ to cblc's canonical framing. `verify_pin_change` currently returns
 adapter directly into cpns's authorized compare-and-exchange, so neither an
 unspent token nor a caller-built signed receipt can alter a pin. Balance and
 record adapters themselves also refuse, even when called outside Gatekeeper.
-Positive extension-spend/restart tests cannot honestly pass until cblc's private
-extension circuit is proven; the current tests require refusal for all contexts.
+Positive facade extension-spend/restart tests remain open until the verified
+acceptance adapter is implemented; the current tests require refusal for all
+contexts. Leaf proof success alone does not activate these adapters.
 
 All retained provider expiries are rounded down to UTC days before constructing
 CheckedGate or committing a claim. Evidence that cannot reach the next day cannot

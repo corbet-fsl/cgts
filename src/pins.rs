@@ -1,5 +1,5 @@
-//! Canonical pin-spend boundary. Activation is closed until cblc proves its
-//! private extension relation; issuer signatures alone cannot create a witness.
+//! Canonical pin-spend boundary. Activation awaits the verified acceptance
+//! adapter; issuer signatures alone cannot create an atomic pin-change witness.
 use crate::{Error, Result};
 use cpns::server::{Change, ChangeTokenVerifier, TokenRejected};
 
@@ -15,7 +15,7 @@ pub struct SpentChange {
 }
 
 /// The only production cpns spend adapter used by cmbr. It fails closed while
-/// extension proofs are unavailable, including when a dependency enables a
+/// the verified acceptance adapter is unavailable, including when a dependency enables a
 /// cblc issuer harness feature through feature unification.
 #[derive(Clone, Copy, Default)]
 pub struct PinSpendVerifier;
@@ -51,7 +51,7 @@ pub fn verify_pin_change(
 }
 
 /// Wire entry point for the pin-change flow. No wire evidence can activate an
-/// unproven extension, regardless of feature unification in downstream crates.
+/// disabled extension integration, regardless of feature unification downstream.
 pub fn verify_encoded_pin_change(change: &Change<'_>, _: &[u8]) -> Result<SpentChange> {
     change_binding(change)?;
     Err(Error::ExtensionsUnavailable)

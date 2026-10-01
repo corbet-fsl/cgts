@@ -60,9 +60,10 @@ committed or configured in public CI.
 
 ## Remaining integration boundaries
 
-cblc's extension proof circuit/holder remains upstream work; its own contract
-forbids production activation without it. Signed acceptance tests exercise
-binding and replay protection, not hidden balance mathematics. Fresh record
+The pinned cblc now supplies its extension circuit, holder and real proof tests.
+The facade's balance and spent-pin adapters remain disabled until their verified
+acceptances are wired into the atomic field-change flow. Signed acceptance tests
+here exercise binding and replay protection, not hidden balance mathematics. Fresh record
 checks delegate to cblc, including below-quorum proof requirements. Additional
 balance predicates need leaf APIs. Field-change execution must coordinate consumption
 with cpns. The default cgrd contact detector fails closed where required; a
