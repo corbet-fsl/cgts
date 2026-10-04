@@ -98,3 +98,43 @@ pub async fn verify_passport<S: cpsd::ChallengeStore, R: rand::RngCore + rand::C
         checked_at,
     })
 }
+
+/// Verify the root board's joint passport and non-transferable credential,
+/// consuming the exact joint challenge through the same stateful verifier.
+/// The global facts cannot outlive either credential's shared cohort. No source
+/// community or source role enters this witness or the root membership.
+pub async fn verify_root_board_passport<S: cpsd::ChallengeStore>(
+    verifier: &cpsd::Verifier<S>,
+    request: &cpsd::RootBoardRequest,
+    proof: &cpsd::RootBoardPresentation,
+    current_global_epoch: u64,
+    now: u64,
+) -> Result<VerifiedPassport> {
+    let global = request.global_request();
+    let expiry = global
+        .epoch_expiry()
+        .filter(|expiry| expiry % 86_400 == 0)
+        .ok_or(Error::Invalid)?
+        .min(request.root().expires_at());
+    let valid_until = i64::try_from(expiry).map_err(|_| Error::Invalid)?;
+    let checked_at = i64::try_from(now).map_err(|_| Error::Invalid)?;
+    if valid_until <= checked_at {
+        return Err(Error::Refused);
+    }
+    let subject = verifier
+        .verify_root_board(request, proof, current_global_epoch, now)
+        .await
+        .map_err(|_| Error::Refused)?;
+    Ok(VerifiedPassport {
+        subject,
+        community: global.community().as_bytes().to_vec(),
+        epoch: current_global_epoch,
+        gates: global
+            .required_gates()
+            .iter()
+            .map(|gate| gate.as_str().to_owned())
+            .collect(),
+        valid_until,
+        checked_at,
+    })
+}
