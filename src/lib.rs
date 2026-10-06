@@ -2,6 +2,7 @@
 //! gate metadata and opaque single-use markers. See `docs/CONTRACT.md`.
 #![forbid(unsafe_code)]
 
+mod account;
 mod engine;
 pub mod gates;
 mod model;
@@ -9,6 +10,9 @@ mod passport;
 pub mod pins;
 pub mod storage;
 
+pub use account::{AccountServiceRequest, AccountServiceResponse};
+/// Canonical Balance configuration and proof types; no second account protocol.
+pub use cblc;
 pub use crbk::{GateLevel, MembershipState, Snapshot};
 pub use engine::*;
 pub use model::*;
@@ -45,6 +49,9 @@ pub enum Error {
     /// A rulebook policy is malformed.
     #[error("invalid gate policy")]
     Policy,
+    /// The configured Balance owner refused an account operation.
+    #[error("account operation refused")]
+    Account(cblc::Error),
 }
 
 impl From<crlt::Error> for Error {

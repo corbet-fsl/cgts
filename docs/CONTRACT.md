@@ -119,3 +119,14 @@ CheckedGate or committing a claim. Evidence that cannot reach the next day canno
 be retained. Both store adapters and the SQL constraint reject precise retained
 expiries. Transient profile checks keep second precision because they certify the
 current signed profile at the verification instant and are never persisted.
+
+## Original account service
+
+`with_account_service` binds exactly one concrete Balance `AccountService` to the
+Gatekeeper's immutable community. `account` validates the ordinary context and
+legal veto and forwards the original typed request with the separately supplied
+canonical member pseudonym. The Community facade supplies its actual membership
+and policy leases. A single native worker owns the original ledger, including
+its final drop; caller cancellation cannot cancel queued work or release those
+leases early. A panic permanently disconnects the worker and fences subsequent
+calls. This creates no gate result and enables no unproven extension gate.

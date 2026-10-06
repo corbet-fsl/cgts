@@ -5,36 +5,37 @@ edition = "2024"
 rust-version = "1.88"
 description = "Gatekeeping facade of cvld: runs gates and collects gate results per community"
 license = "FSL-1.1-ALv2"
-repository = "https://github.com/corbet-libs/cgts"
+repository = "https://git.corbet.ch/corbet-libs/cgts.git"
 readme = "README.md"
 publish = false
 include = ["Cargo.toml", "src/**", "docs/**", "README.md", "LICENSE.md"]
 
 [dependencies]
-cpns = { git = "https://github.com/corbet-foss/cpns", branch = "main" }
-crlt = { git = "https://github.com/corbet-foss/crlt", branch = "main" }
-crbk = { git = "https://github.com/corbet-foss/crbk", branch = "main" }
-clbs = { git = "https://github.com/corbet-foss/clbs", branch = "main" }
-cgrd = { git = "https://github.com/corbet-foss/cgrd", branch = "main", default-features = false }
-cvch = { git = "https://github.com/corbet-foss/cvch", branch = "main" }
-cblc = { git = "https://github.com/corbet-libs/cblc", branch = "main" }
-cpsd = { git = "https://github.com/corbet-foss/cpsd", branch = "main" }
+cpns = { git = "https://git.corbet.ch/corbet-foss/cpns.git", branch = "v01" }
+crlt = { git = "https://git.corbet.ch/corbet-foss/crlt.git", branch = "v01" }
+crbk = { git = "https://git.corbet.ch/corbet-foss/crbk.git", branch = "v01" }
+clbs = { git = "https://git.corbet.ch/corbet-foss/clbs.git", branch = "v01" }
+cgrd = { git = "https://git.corbet.ch/corbet-foss/cgrd.git", branch = "v01", default-features = false }
+cvch = { git = "https://git.corbet.ch/corbet-foss/cvch.git", branch = "v01" }
+cblc = { git = "https://git.corbet.ch/corbet-libs/cblc.git", branch = "v01" }
+cpsd = { git = "https://git.corbet.ch/corbet-foss/cpsd.git", branch = "v01" }
 rand = "0.8"
 ed25519-dalek = "3"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 thiserror = "2"
-tokio = { version = "1", features = ["rt"] }
+tokio = { version = "1", features = ["rt", "sync"] }
 
 [dev-dependencies]
 # Build actual imported SQLite fixtures; production storage remains through crlt.
 libsql = { version = "0.9.30", default-features = false, features = ["core"] }
 # Current cblc constructors still require the preceding upstream key type.
 ed25519-dalek-v2 = { package = "ed25519-dalek", version = "2.2" }
-csgn = { git = "https://github.com/corbet-foss/csgn", branch = "main", default-features = false, features = ["volatile-signer"] }
+csgn = { git = "https://git.corbet.ch/corbet-foss/csgn.git", branch = "v01", default-features = false, features = ["volatile-signer"] }
 data-encoding = "2.9"
 tempfile = "3"
-tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+sha2 = "0.10"
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "time"] }
 
 [lints.rust]
 unsafe_code = "forbid"
