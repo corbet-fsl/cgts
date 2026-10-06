@@ -67,7 +67,7 @@ LegalGate delegates exact-action checks to clbs. It applies even when action
 policy is empty and cannot be disabled by a rulebook switch. Legal errors fail
 closed. Qualified authority verification remains a service/leaf responsibility.
 
-The development gate exists only in cglb. cgts exports no development module in
+The development gate exists only in cgbl. cgts exports no development module in
 any build; CI verifies absence in a release profile with debug assertions enabled.
 
 ## Persistence

@@ -9,7 +9,7 @@ Native Rust, FSL-1.1-ALv2. Development API; never publish to a registry.
 subject, provider and exclusive expiry. `VoucherGate`, `ProfileGate`,
 `BalanceGate`, `RecordGate` and `LegalGate` adapt the existing leaves. Balance
 and record execution is disabled with an explicit error until cblc extension
-proofs are established. The global toy test gate belongs only to cglb; cgts has no always-pass implementation. See [the implemented contract](docs/CONTRACT.md).
+proofs are established. The global toy test gate belongs only to cgbl; cgts has no always-pass implementation. See [the implemented contract](docs/CONTRACT.md).
 
 The service supplies an authenticated active `crbk::Snapshot`, subject, action,
 clock and leaf configuration. Inactive gates/providers never appear in steps
