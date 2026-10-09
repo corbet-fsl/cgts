@@ -12,7 +12,7 @@
     "evidence_packages": {
       "crbk": {
         "version": "0.0.0",
-        "source": "git+https://github.com/corbet-foss/crbk?branch=main#2811a5e1614fbdcd03b493dc8af0e901633d2e5e"
+        "source": "git+https://github.com/corbet-foss/crbk?branch=main#bff7c5db7b46d8591e5a660429e27afcdcf1a0ab"
       }
     }
   },
@@ -33,7 +33,7 @@
     "evidence_packages": {
       "cgrd": {
         "version": "0.0.0",
-        "source": "git+https://github.com/corbet-foss/cgrd?branch=main#d1cacbdb863534183d27de468359f657aa7174fa"
+        "source": "git+https://github.com/corbet-foss/cgrd?branch=main#fd3929858ca29ac5c228a08bc11ac0f7e575176f"
       }
     }
   },
