@@ -7,7 +7,7 @@
     "reason": "The exclusive Rulebook is missing the fixed valid integer definition; current define has no other failures.",
     "evidence": "docs/COVERAGE.md#proposed-invariant-exceptions",
     "evidence_sources": {
-      "src/gates.rs": "0dd8001d1d25046003be0910f70d8bd4bde36f11957efaa53ee4f864814a2a54"
+      "src/gates.rs": "c3e8d90d65229aed373fa28e4247ac22647bb6292638f10692e676cb1d8b1bc4"
     },
     "evidence_packages": {
       "crbk": {
@@ -24,7 +24,7 @@
     "reason": "Both this adapter and the actual cgrd verifier bind the admitted community to the same policy.",
     "evidence": "docs/COVERAGE.md#proposed-invariant-exceptions",
     "evidence_sources": {
-      "src/gates.rs": "0dd8001d1d25046003be0910f70d8bd4bde36f11957efaa53ee4f864814a2a54"
+      "src/gates.rs": "c3e8d90d65229aed373fa28e4247ac22647bb6292638f10692e676cb1d8b1bc4"
     },
     "branch": {
       "block": 0,

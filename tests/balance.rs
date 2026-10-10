@@ -223,22 +223,19 @@ async fn wrong_effect_subject_owner_scope_binding_expiry_and_signature_fail() {
 #[tokio::test]
 async fn record_gate_refuses_without_the_complete_extension_relation() {
     use cblc::accounting_ledger::{AccountLedger, AccountLedgerPolicy};
-    use cblc::accounting_service::{ProcessAccountVerifier, ProcessVerifierConfig};
     use std::sync::{Arc, Mutex};
+    struct UnavailableAccountVerifier;
+    impl AccountProofVerifier for UnavailableAccountVerifier {
+        fn scope(&self) -> AccountProofScope {
+            scope()
+        }
+        fn verify(&self, _: &AccountStatement, _: &[u8]) -> Result<(), cblc::Error> {
+            panic!("missing extension relation must refuse before ordinary account verification")
+        }
+    }
     let ledger = tokio::task::spawn_blocking(move || {
-        // The real process adapter is not invoked: a legacy ledger must refuse
-        // record proofs before any worker could treat them as ordinary v2 proofs.
-        let verifier = ProcessAccountVerifier::new(ProcessVerifierConfig {
-            node: "/unconfigured/node".into(),
-            script: "/unconfigured/worker.mjs".into(),
-            artifact_config: "/unconfigured/artifacts.json".into(),
-            scope: scope(),
-            timeout: std::time::Duration::from_secs(1),
-            maximum_parallel: 1,
-            max_proof_bytes: 1024,
-            node_heap_megabytes: 64,
-        })
-        .unwrap();
+        // No accepting substitute: ordinary account verification is unreachable
+        // when the ledger has no authenticated complete extension relation.
         AccountLedger::with_store(
             cblc::storage::MemoryStore::default(),
             cblc::admission::AdmissionTrust {
@@ -252,7 +249,7 @@ async fn record_gate_refuses_without_the_complete_extension_relation() {
                 max_proof_bytes: 1024,
                 checkpoint_period_seconds: 1000,
             },
-            verifier,
+            UnavailableAccountVerifier,
             ed25519_dalek_v2::SigningKey::from_bytes(&[9; 32]),
         )
         .unwrap()
@@ -311,8 +308,7 @@ async fn record_gate_refuses_without_the_complete_extension_relation() {
         Err(Error::ExtensionsUnavailable)
     ));
     assert!(keeper.collect(context(&snapshot)).await.unwrap().is_empty());
-    // The standalone leaf owns a runtime: its final drop, like construction,
-    // belongs outside async execution. Services normally retain the shared ledger.
+    // Services normally retain the shared ledger; explicitly release this fixture.
     tokio::task::spawn_blocking(move || drop(gate))
         .await
         .unwrap();
