@@ -1,9 +1,10 @@
-//! Verification of the upstream signed profile fixture through the facade.
+//! Actual Guard profile verification through the facade, using public test keys.
 mod common;
 use cgts::*;
 use common::*;
 
-// Frozen, publicly generated cgrd wire fixture. No production identity or key.
+// Frozen public cgrd wire fixture. Its old unbound credential remains a negative
+// vector; current positive fixtures are signed below using the same test keys.
 #[derive(serde::Deserialize)]
 struct Fixture {
     bundle: cgrd::Bundle,
@@ -12,9 +13,61 @@ struct Fixture {
     keys: Vec<u8>,
 }
 
+fn original_fixture() -> Fixture {
+    serde_json::from_str(include_str!("fixtures/profile.json")).unwrap()
+}
+
+fn issuer() -> csgn::Signer {
+    csgn::Signer::new(
+        "garden",
+        csgn::SecretKey::from_seed(&mut [11; 32]),
+        1000,
+        10000,
+    )
+    .unwrap()
+}
+
+fn sign_body(body: &cgrd::BundleContent) -> cgrd::Bundle {
+    use ed25519_dalek::Signer as _;
+    let payload = serde_json::to_vec(body).unwrap();
+    cgrd::Bundle {
+        signature: ed25519_dalek::SigningKey::from_bytes(&[22; 32])
+            .sign(&cgrd::binding_bytes(&payload))
+            .to_bytes()
+            .to_vec(),
+        payload,
+    }
+}
+
+// This is a trusted signing fixture for the ProfileGate boundary. Full real
+// issuer-to-Guard privacy/policy composition is exercised in cvld, not simulated
+// here. No admission capability or Guard decision is constructed by this helper.
+fn current_fixture() -> Fixture {
+    let mut fixture = original_fixture();
+    let keys = csgn::KeyRing::from_cbor(&fixture.keys).unwrap();
+    let mut body: cgrd::BundleContent = serde_json::from_slice(&fixture.bundle.payload).unwrap();
+    let signed = keys
+        .verify(&body.credential, csgn::Kind::Credential, 1100)
+        .unwrap();
+    let mut credential: serde_json::Value = serde_json::from_slice(signed.payload()).unwrap();
+    credential["purpose"] = "cplc.community-credential.v2".into();
+    credential["issuance_action"] = "admission".into();
+    let credential: cgrd::Credential = serde_json::from_value(credential).unwrap();
+    body.credential = issuer()
+        .sign(
+            csgn::Kind::Credential,
+            &serde_json::to_vec(&credential).unwrap(),
+            1000,
+            2000,
+        )
+        .unwrap();
+    fixture.bundle = sign_body(&body);
+    fixture
+}
+
 #[tokio::test]
 async fn actual_signed_profile_is_bound_to_scope_and_never_retained() {
-    let fixture: Fixture = serde_json::from_str(include_str!("fixtures/profile.json")).unwrap();
+    let fixture = current_fixture();
     let keys = csgn::KeyRing::from_cbor(&fixture.keys).unwrap();
     let mut gate = gates::ProfileGate {
         provider: "local",
@@ -22,6 +75,7 @@ async fn actual_signed_profile_is_bound_to_scope_and_never_retained() {
         scope: cgrd::Scope::Public,
         policy: cgrd::Policy {
             community: "garden",
+            expected_issuance_action: "admission",
             keys: &keys,
             now: 1100,
             minimum_epoch: 2,
@@ -51,6 +105,16 @@ async fn actual_signed_profile_is_bound_to_scope_and_never_retained() {
             .unwrap()
             .allowed
     );
+    assert!(matches!(
+        keeper.run(context, &gate, &original_fixture().bundle).await,
+        Err(Error::Refused)
+    ));
+    gate.policy.expected_issuance_action = "another.action";
+    assert!(matches!(
+        keeper.run(context, &gate, &fixture.bundle).await,
+        Err(Error::Refused)
+    ));
+    gate.policy.expected_issuance_action = "admission";
     gate.scope = cgrd::Scope::Full;
     assert!(matches!(
         keeper.run(context, &gate, &fixture.bundle).await,
@@ -108,8 +172,7 @@ async fn actual_signed_profile_is_bound_to_scope_and_never_retained() {
 
 #[tokio::test]
 async fn actual_full_profile_accepts_private_pin_openings_without_retaining_them() {
-    use ed25519_dalek::Signer as _;
-    let mut fixture: Fixture = serde_json::from_str(include_str!("fixtures/profile.json")).unwrap();
+    let mut fixture = current_fixture();
     let keys = csgn::KeyRing::from_cbor(&fixture.keys).unwrap();
     let mut body: cgrd::BundleContent = serde_json::from_slice(&fixture.bundle.payload).unwrap();
     let verified = keys
@@ -139,14 +202,7 @@ async fn actual_full_profile_accepts_private_pin_openings_without_retaining_them
         salt: salt.as_bytes().to_vec(),
     });
     // Same public deterministic upstream fixture keys, never operational credentials.
-    let mut issuer = csgn::Signer::new(
-        "garden",
-        csgn::SecretKey::from_seed(&mut [11; 32]),
-        1000,
-        10000,
-    )
-    .unwrap();
-    body.credential = issuer
+    body.credential = issuer()
         .sign(
             csgn::Kind::Credential,
             &serde_json::to_vec(&credential).unwrap(),
@@ -154,17 +210,14 @@ async fn actual_full_profile_accepts_private_pin_openings_without_retaining_them
             2000,
         )
         .unwrap();
-    fixture.bundle.payload = serde_json::to_vec(&body).unwrap();
-    fixture.bundle.signature = ed25519_dalek::SigningKey::from_bytes(&[22; 32])
-        .sign(&cgrd::binding_bytes(&fixture.bundle.payload))
-        .to_bytes()
-        .to_vec();
+    fixture.bundle = sign_body(&body);
     let gate = gates::ProfileGate {
         provider: "local",
         schema: &fixture.schema,
         scope: cgrd::Scope::Full,
         policy: cgrd::Policy {
             community: "garden",
+            expected_issuance_action: "admission",
             keys: &keys,
             now: 1100,
             minimum_epoch: 2,
