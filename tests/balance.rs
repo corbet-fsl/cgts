@@ -229,7 +229,7 @@ async fn record_gate_refuses_without_the_complete_extension_relation() {
         fn scope(&self) -> AccountProofScope {
             scope()
         }
-        fn verify(&self, _: &AccountStatement, _: &[u8]) -> Result<(), cblc::Error> {
+        fn verify(&self, _: &AccountStatement, _: &[u8]) -> std::result::Result<(), cblc::Error> {
             panic!("missing extension relation must refuse before ordinary account verification")
         }
     }
