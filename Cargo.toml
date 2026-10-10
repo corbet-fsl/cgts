@@ -43,3 +43,11 @@ missing_docs = "warn"
 
 [profile.dev.package."*"]
 opt-level = 3
+
+# Keep remaining transitive legacy URLs on the same current canonical source.
+# These are source aliases, not version or commit pins.
+[patch."https://github.com/corbet-foss/crlt"]
+crlt = { git = "https://git.corbet.ch/corbet-foss/crlt", branch = "main" }
+
+[patch."https://github.com/corbet-foss/cpns"]
+cpns = { git = "https://git.corbet.ch/corbet-foss/cpns", branch = "main" }
