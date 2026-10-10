@@ -7,7 +7,7 @@ import tomllib
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
-FIRST_PARTY = re.compile(r"^(?:git\+)?https://github\.com/(?:corbet-(?:foss|libs)|cmtymeet)/")
+FIRST_PARTY = re.compile(r"^(?:git\+)?https://(?:github\.com|git\.corbet\.ch)/(?:corbet-(?:foss|libs)|cmtymeet)/")
 SHA = re.compile(r"^[0-9a-f]{40}$")
 
 
@@ -45,8 +45,7 @@ def rejects(function, value):
     raise AssertionError(f'Invalid input accepted: {value!r}')
 
 
-def self_test():
-    repo = 'https://github.com/corbet-foss/example'
+def check_host_fixtures(repo):
     source = 'git+' + repo + '?branch=main#' + 'a' * 40
     package = {'name': 'example', 'source': source}
     check_lock([package])
@@ -66,6 +65,12 @@ def self_test():
                         {'git': repo, 'branch': 'main', 'tag': 'v1'}):
         rejects(check_manifest, {'target': {'cfg(wasm)': {'dependencies': {'alias': declaration}}}})
     check_manifest({'workspace': {'dependencies': {'alias': {'git': repo, 'package': 'example', 'branch': 'main'}}}})
+
+
+def self_test():
+    for host in ['github.com', 'git.corbet.ch']:
+        for organization in ['corbet-foss', 'corbet-libs', 'cmtymeet']:
+            check_host_fixtures(f'https://{host}/{organization}/example')
 
 
 if __name__ == '__main__':

@@ -8,6 +8,7 @@ trap 'result=$?; for report in coverage.json coverage.lcov coverage.txt; do if [
 export CARGO_BUILD_JOBS="${CARGO_BUILD_JOBS:-2}"
 export CARGO_TERM_COLOR="${CARGO_TERM_COLOR:-always}"
 
+python3 .ci/test-report-retention.py
 rustc --version
 cargo fmt --all --check
 node --test .github/check-pins.test.mjs
@@ -17,6 +18,7 @@ cargo clippy --locked --all-targets -- -D warnings
 cargo test --locked --no-fail-fast
 cargo test --locked --release --no-fail-fast
 
+(
 mkdir -p examples
 if [ -e examples/development_gate_probe.rs ]; then
   echo 'examples/development_gate_probe.rs already exists; refusing to overwrite' >&2
@@ -31,8 +33,7 @@ if CARGO_PROFILE_RELEASE_DEBUG_ASSERTIONS=true cargo check --locked --release --
 fi
 cat release-probe.log
 grep -F 'could not find `development` in `gates`' release-probe.log
-trap - EXIT
-cleanup_probe
+)
 
 python3 .github/check-first-party.py
 
