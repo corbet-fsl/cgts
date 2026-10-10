@@ -1,3 +1,4 @@
+//! Payment facts cross the gate boundary without retaining provider data.
 mod common;
 use cgts::*;
 use common::*;
@@ -6,6 +7,9 @@ use std::sync::Arc;
 
 struct Provider;
 impl p::Adapter for Provider {
+    fn max_input_bytes(&self) -> usize {
+        16384
+    }
     fn capabilities(&self) -> p::Capabilities {
         p::Capabilities {
             id: "local".into(),
