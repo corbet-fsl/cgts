@@ -205,14 +205,21 @@ async fn paid_access_handoff_checks_level_and_period_without_financial_data() {
     let context = context(&snapshot);
     assert_eq!(gate.descriptor().steps[0].input, "cpmt.PaidAccess");
     let keeper = memory("garden");
-    let access = access(1100, 1200).await;
+    let short = access(1100, 1200).await;
+    assert!(matches!(
+        keeper.run(context, &gate, &short).await,
+        Err(Error::Invalid)
+    ));
+    // Retained facts use the existing UTC-day boundary; refusal above must not
+    // consume the receipt before a valid retained projection is supplied.
+    let access = access(1100, 172800).await;
     let checked = keeper.run(context, &gate, &access).await.unwrap();
     assert_eq!(
         serde_json::to_value(checked.result()).unwrap(),
-        serde_json::json!({"gate":"cpmt","level":"community","subject":"alice","provider":"local","valid_until":1200})
+        serde_json::json!({"gate":"cpmt","level":"community","subject":"alice","provider":"local","valid_until":172800})
     );
     assert!(keeper.run(context, &gate, &access).await.is_err());
-    for now in [-1, 1099, 1200] {
+    for now in [-1, 1099, 172800] {
         assert!(
             gate.verify(Context { now, ..context }, &access)
                 .await
