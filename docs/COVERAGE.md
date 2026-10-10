@@ -1,7 +1,7 @@
 # Coverage contract
 
 CI targets 100% of reachable production lines and branches. Stable Rust runs
-the existing native and wasm checks. Nightly Rust is used only for LLVM branch
+the native and release checks. Nightly Rust is used only for LLVM branch
 instrumentation, which currently requires it. Both jobs use the same resolved
 Cargo.lock snapshot; all build and test commands after resolution use --locked.
 
@@ -17,8 +17,9 @@ any genuinely unreachable defensive branch precisely before excluding it. Native
 coverage does not establish browser execution; keep the actual wasm vectors.
 
 First-party dependencies follow main. Their resolved full revisions remain in
-Cargo.lock, with exactly one source per first-party crate. Dependabot maintains
-committed snapshots; CI refreshes once per run and retains the tested snapshot.
+Cargo.lock, with exactly one source per first-party crate. Dependency refreshes
+retain their resolved snapshot; final verification uses the committed lockfile
+without resolving a different graph.
 Auto-merge requires protected main and successful substantive checks on the
 exact current Dependabot head. It never executes PR code with write permissions.
 

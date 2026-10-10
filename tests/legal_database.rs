@@ -1,5 +1,5 @@
+//! Real host-owned database persistence, isolation, concurrency and failure boundaries.
 use cgts::legal_storage::{LibsqlStore, SCHEMA};
-// Real host-owned database persistence, isolation, concurrency and failure boundaries.
 #[path = "legal_common/mod.rs"]
 mod common;
 

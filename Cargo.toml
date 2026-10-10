@@ -2,7 +2,7 @@
 name = "cgts"
 version = "0.0.0"
 edition = "2024"
-rust-version = "1.88"
+rust-version = "1.95"
 description = "Gatekeeping facade of cvld: runs gates and collects gate results per community"
 license = "FSL-1.1-ALv2"
 repository = "https://git.corbet.ch/corbet-libs/cgts"
