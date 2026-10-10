@@ -9,7 +9,7 @@ The coverage job executes real tests with cargo-llvm-cov and retains the raw JSO
 even when the gate fails. The checker compares integer covered/total counts for
 both metrics; rounded percentages cannot pass. An empty report cannot pass.
 The report excludes integration-test harness files under tests/, not production
-code. No production source exclusions are currently approved.
+code. The source-bound exceptions listed below are the only approved production exclusions.
 
 A failing gate is missing evidence, not permission to lower the threshold or
 change domain behavior. Add meaningful failure and round-trip tests. Document
@@ -34,12 +34,13 @@ its stricter instantiation totals are not described as passed.
 
 The source gate requires a nonempty report, an exact file inventory matching the
 companion JSON, matching raw summary metadata, complete emitted branch counts
-and no duplicate, unknown or zero counters. It has no production exclusions.
+and no duplicate, unknown or unexplained zero counters. Its eight line and two
+branch-arm exceptions remain visible in the raw reports.
 Actual browser/device execution remains separate from native coverage.
 
-## Proposed invariant exceptions
+## Reviewed invariant exceptions
 
-These exact exceptions require independent review. They do not qualify disabled
+These exact exceptions received independent review; changes require renewed review. They do not qualify disabled
 pin-spend integration. Each is bound to complete local source. Proofs that depend on CRBK or CGRD
 additionally bind that exact crate identity in the retained Cargo.lock; the checker
 requires exactly one matching package/version/full Git source. A change to the

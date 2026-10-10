@@ -139,3 +139,12 @@ and provider binding. It receives no amount, currency, payment instrument or
 provider response. `PaymentGate` remains available for other explicitly selected
 financial facts. Production dispatch, cost authorization and local simulation
 remain inside cpmt/crpt; these gate adapters never contact payment providers.
+
+
+Time inputs in this host facade describe an explicit as-of evaluation. They are
+bound into the checked policy context; they are not a live-clock implementation.
+A successful result at that instant does not authorize a later action after its
+validity ends. The hosting service owns the final authorization boundary: use its
+trusted current clock, check result expiry and current policy/legal state, and
+re-evaluate when the earlier context is no longer current. Passing an old `now`
+through delayed storage work does not establish completion-time freshness.
