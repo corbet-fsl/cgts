@@ -107,7 +107,7 @@ async fn failed_result_write_rolls_back_spend_and_replacement() {
     );
     db2.migrate(&[
         crlt::Migration::new(1, "strict-gates", &strict),
-        crlt::Migration::new(2, "legal", clbs::SCHEMA),
+        crlt::Migration::new(2, "legal", cgts::legal_storage::SCHEMA),
     ])
     .await
     .unwrap();

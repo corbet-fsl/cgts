@@ -225,8 +225,6 @@ async fn record_gate_refuses_without_the_complete_extension_relation() {
     use cblc::accounting_ledger::{AccountLedger, AccountLedgerPolicy};
     use cblc::accounting_service::{ProcessAccountVerifier, ProcessVerifierConfig};
     use std::sync::{Arc, Mutex};
-    let dir = tempfile::tempdir().unwrap();
-    let path = dir.path().join("record-ledger.db");
     let ledger = tokio::task::spawn_blocking(move || {
         // The real process adapter is not invoked: a legacy ledger must refuse
         // record proofs before any worker could treat them as ordinary v2 proofs.
@@ -241,8 +239,8 @@ async fn record_gate_refuses_without_the_complete_extension_relation() {
             node_heap_megabytes: 64,
         })
         .unwrap();
-        AccountLedger::open(
-            path,
+        AccountLedger::with_store(
+            cblc::storage::MemoryStore::default(),
             cblc::admission::AdmissionTrust {
                 community_id: "garden".into(),
                 policy_digest: B64.encode(&[1; 32]),

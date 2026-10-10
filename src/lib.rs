@@ -4,6 +4,7 @@
 
 mod engine;
 pub mod gates;
+pub mod legal_storage;
 mod model;
 mod passport;
 pub mod payments;

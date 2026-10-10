@@ -2,6 +2,47 @@
 use crate::*;
 use cpmt::payments::{Binding, Evidence};
 
+/// Paid access by application-defined level and period. Financial terms are
+/// verified and transformed inside cpmt/crpt before this boundary.
+pub struct PaidAccessGate {
+    payment: PaymentGate,
+    level: String,
+}
+impl PaidAccessGate {
+    /// Require this exact application level; levels have no implicit ordering.
+    pub fn new(gate: String, provider: String, level: String, retain: bool) -> Result<Self> {
+        component(&level)?;
+        Ok(Self {
+            payment: PaymentGate::new(gate, provider, retain)?,
+            level,
+        })
+    }
+}
+impl Gate for PaidAccessGate {
+    type Input = cpmt::access::PaidAccess;
+    fn descriptor(&self) -> Descriptor {
+        let mut descriptor = self.payment.descriptor();
+        descriptor.steps[0].description = "Complete payment for the required access level.".into();
+        descriptor.steps[0].input = "cpmt.PaidAccess".into();
+        descriptor
+    }
+    async fn verify(&self, context: Context<'_>, access: &Self::Input) -> Result<Proof> {
+        let binding = Binding {
+            scope: context.snapshot.community.clone(),
+            subject: context.subject.into(),
+            action: context.action.into(),
+        };
+        let now = u64::try_from(context.now).map_err(|_| Error::Invalid)?;
+        let (level, _) = access
+            .in_context(&binding, now)
+            .map_err(|_| Error::Refused)?;
+        if level != self.level {
+            return Err(Error::Refused);
+        }
+        self.payment.verify(context, access.evidence()).await
+    }
+}
+
 /// Community payment gate over an already verified in-process payment fact.
 /// The caller chooses the acceptable fact and lifetime inside the payment boundary.
 pub struct PaymentGate {

@@ -86,3 +86,20 @@ Payment leaves (`cpmt` and `crpt`) share `cpmt::payments::Evidence`.
 binding, applies the caller's transient/retained choice, and spends the
 receipt-derived claim atomically with the existing gate result. It never calls a
 payment provider or receives a wallet, billing response or KYC record.
+
+
+For level-and-period access, `payments::PaidAccessGate` accepts the protected
+`cpmt::access::PaidAccess` result. The payment library verifies the configured
+financial terms and transforms them before this boundary. The gate checks the
+exact requested level (no implicit ranking), current period and existing context
+and provider binding. It receives no amount, currency, payment instrument or
+provider response. `PaymentGate` remains available for other explicitly selected
+financial facts. Production dispatch, cost authorization and local simulation
+remain inside cpmt/crpt; these gate adapters never contact payment providers.
+
+Legal-order SQL persistence now lives in this host layer under `legal_storage`.
+It implements `clbs::Store` over the existing scoped crlt database and retains
+its migration and transaction semantics. `clbs` owns legal interpretation and
+verification; it opens no database. Host tests cover real SQLite persistence,
+community isolation, concurrent retries, corrupt rows, complete reads and index
+plans. Remote Turso probes are ignored unless explicitly selected and authorized.

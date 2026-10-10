@@ -128,3 +128,13 @@ community rulebook switches and the legal veto still run normally. Receipt claim
 share the `payment` domain across gate/provider identities so changing either
 cannot redeem the same receipt again. Retained expiry uses the existing exclusive
 UTC-day floor. Payment execution and commercial policy are not added to cgts.
+
+
+For level-and-period access, `payments::PaidAccessGate` accepts the protected
+`cpmt::access::PaidAccess` result. The payment library verifies the configured
+financial terms and transforms them before this boundary. The gate checks the
+exact requested level (no implicit ranking), current period and existing context
+and provider binding. It receives no amount, currency, payment instrument or
+provider response. `PaymentGate` remains available for other explicitly selected
+financial facts. Production dispatch, cost authorization and local simulation
+remain inside cpmt/crpt; these gate adapters never contact payment providers.

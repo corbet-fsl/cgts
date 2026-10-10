@@ -125,7 +125,7 @@ pub async fn open(path: &std::path::Path) -> crlt::Db {
 pub async fn migrate(db: &crlt::Db) {
     let migrations = [
         crlt::Migration::new(1, "gates", SCHEMA),
-        crlt::Migration::new(2, "legal", clbs::SCHEMA),
+        crlt::Migration::new(2, "legal", cgts::legal_storage::SCHEMA),
     ];
     db.migrate(&migrations).await.unwrap();
     assert_eq!(db.migrate(&migrations).await.unwrap(), 0);
@@ -133,10 +133,13 @@ pub async fn migrate(db: &crlt::Db) {
 pub fn sql(
     db: &crlt::Db,
     community: &str,
-) -> Gatekeeper<LibsqlStore, LegalGate<clbs::LibsqlStore, Authority>> {
+) -> Gatekeeper<LibsqlStore, LegalGate<cgts::legal_storage::LibsqlStore, Authority>> {
     Gatekeeper::new(
         LibsqlStore::new(db, community).unwrap(),
-        LegalGate::new(clbs::LibsqlStore::new(db, community).unwrap(), Authority),
+        LegalGate::new(
+            cgts::legal_storage::LibsqlStore::new(db, community).unwrap(),
+            Authority,
+        ),
     )
     .unwrap()
 }

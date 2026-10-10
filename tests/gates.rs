@@ -271,7 +271,7 @@ async fn real_legal_order_cannot_be_bypassed_by_switch_or_empty_policy() {
     let db = open(&dir.path().join("legal.db")).await;
     let keeper = sql(&db, "garden");
     let legal = clbs::Gate::new(
-        clbs::LibsqlStore::new(&db, "garden").unwrap(),
+        cgts::legal_storage::LibsqlStore::new(&db, "garden").unwrap(),
         Authority,
         Clock,
     );

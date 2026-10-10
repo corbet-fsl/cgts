@@ -4,6 +4,7 @@ use cgts::*;
 use common::*;
 
 #[tokio::test]
+#[ignore = "requires explicit operator authorization and disposable remote database"]
 async fn optional_real_turso() {
     let (Ok(url), Ok(token)) = (std::env::var("TURSO_URL"), std::env::var("TURSO_TOKEN")) else {
         eprintln!("Skipped live Turso: both environment credentials are required");
