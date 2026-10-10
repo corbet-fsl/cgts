@@ -6,6 +6,7 @@ mod engine;
 pub mod gates;
 mod model;
 mod passport;
+pub mod payments;
 pub mod pins;
 pub mod storage;
 

@@ -119,3 +119,12 @@ CheckedGate or committing a claim. Evidence that cannot reach the next day canno
 be retained. Both store adapters and the SQL constraint reject precise retained
 expiries. Transient profile checks keep second precision because they certify the
 current signed profile at the verification instant and are never persisted.
+
+## Payment handoff
+
+`payments::PaymentGate` accepts only in-process `cpmt::payments::Evidence`.
+The payment caller selects the required fact and lifetime before this boundary;
+community rulebook switches and the legal veto still run normally. Receipt claims
+share the `payment` domain across gate/provider identities so changing either
+cannot redeem the same receipt again. Retained expiry uses the existing exclusive
+UTC-day floor. Payment execution and commercial policy are not added to cgts.

@@ -80,3 +80,9 @@ Copyright 2026 Julian Y. Richard Corbet. Licensed under the
 Dependency updates follow main and are tested against one CI-resolved lockfile.
 Line and branch coverage target 100%; failures remain blocking. See
 [the coverage contract](docs/COVERAGE.md) for measurement and exclusions.
+
+Payment leaves (`cpmt` and `crpt`) share `cpmt::payments::Evidence`.
+`payments::PaymentGate` rechecks the complete community/member/action/provider
+binding, applies the caller's transient/retained choice, and spends the
+receipt-derived claim atomically with the existing gate result. It never calls a
+payment provider or receives a wallet, billing response or KYC record.
