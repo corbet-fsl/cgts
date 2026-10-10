@@ -1,5 +1,6 @@
 //! Host-owned persistence for clbs legal metadata. The domain library has no database connection.
 use crlt::{Db, Row, Value, params};
+use std::{future::Future, pin::Pin};
 
 use clbs::{Append, Counts, Error, Order, OrderKind, Period, Record, Result, Revocation, Store};
 
@@ -8,6 +9,7 @@ use clbs::{Append, Counts, Error, Order, OrderKind, Period, Record, Result, Revo
 pub const SCHEMA: &str = include_str!("legal_schema.sql");
 
 const BY_ID: &str = "SELECT id, subject, reference, entered_by, kind, authority, scope, starts_at, ends_at FROM clbs_orders WHERE id = ?1";
+const SELF_BAN: &str = "SELECT id, subject, reference, entered_by, kind, authority, scope, starts_at, ends_at FROM clbs_orders WHERE subject = ?1 AND kind = 'self_ban' LIMIT 1";
 const ACTIVE: &str = "SELECT id, subject, reference, entered_by, kind, authority, scope, starts_at, ends_at FROM clbs_orders WHERE subject = ?1 AND starts_at <= ?2 AND (ends_at IS NULL OR ends_at > ?2) ORDER BY id";
 const REVOCATIONS: &str = "SELECT id, subject, reference, entered_by, kind, authority, scope, starts_at, ends_at FROM clbs_orders WHERE starts_at <= ?1 AND (ends_at IS NULL OR ends_at > ?1) ORDER BY id";
 const COUNTS: &str = "SELECT COUNT(CASE WHEN kind = 'legal' THEN 1 END), COUNT(CASE WHEN kind = 'self_ban' THEN 1 END), COUNT(CASE WHEN kind = 'legal' AND starts_at <= ?1 AND (ends_at IS NULL OR ends_at > ?1) THEN 1 END), COUNT(CASE WHEN kind = 'self_ban' AND starts_at <= ?1 AND (ends_at IS NULL OR ends_at > ?1) THEN 1 END) FROM clbs_orders";
@@ -60,14 +62,20 @@ impl LibsqlStore {
         };
         Record::restore_trusted(order).map_err(|_| Error::Storage)
     }
-}
-
-impl Store for LibsqlStore {
-    fn community(&self) -> &str {
-        &self.community
-    }
-
-    async fn append(&self, record: &Record) -> Result<Append> {
+    /// Append verified metadata and the host's notice in one scoped transaction.
+    /// The notice runs only for a new record, after immutable metadata checks.
+    /// It receives a borrow, so it cannot consume/commit the transaction. crlt
+    /// also refuses transaction-control SQL. Failure/cancellation rolls back
+    /// both writes; a commit error requires exact trusted-record reconciliation.
+    /// Identical retries do not run the notice again or advance its generation.
+    pub async fn append_with(
+        &self,
+        record: &Record,
+        notice: impl for<'a> FnOnce(
+            &'a mut crlt::Transaction,
+        ) -> Pin<Box<dyn Future<Output = Result<()>> + Send + 'a>>
+        + Send,
+    ) -> Result<Append> {
         let order = record.order();
         if order.community != self.community {
             return Err(Error::CommunityMismatch);
@@ -108,14 +116,40 @@ impl Store for LibsqlStore {
         )
         .await
         .map_err(db_error)?;
+        if let Err(error) = notice(&mut tx).await {
+            tx.rollback().await.map_err(db_error)?;
+            return Err(error);
+        }
         tx.commit().await.map_err(db_error)?;
         Ok(Append::Inserted)
+    }
+}
+
+impl Store for LibsqlStore {
+    fn community(&self) -> &str {
+        &self.community
+    }
+
+    async fn append(&self, record: &Record) -> Result<Append> {
+        self.append_with(record, |_| Box::pin(async { Ok(()) }))
+            .await
     }
 
     async fn record(&self, id: &str) -> Result<Option<Record>> {
         text(id)?;
         self.db
             .query(BY_ID, [id])
+            .await
+            .map_err(db_error)?
+            .first()
+            .map(|row| self.decode(row))
+            .transpose()
+    }
+
+    async fn self_ban_record(&self, subject: &str) -> Result<Option<Record>> {
+        text(subject)?;
+        self.db
+            .query(SELF_BAN, [subject])
             .await
             .map_err(db_error)?
             .first()
