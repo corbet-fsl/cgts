@@ -9,12 +9,14 @@ export CARGO_BUILD_JOBS="${CARGO_BUILD_JOBS:-2}"
 export CARGO_TERM_COLOR="${CARGO_TERM_COLOR:-always}"
 
 python3 .ci/test-report-retention.py
+python3 .ci/test-provider-controls.py
 rustc --version
 cargo fmt --all --check
 node --test .github/check-pins.test.mjs
 cargo metadata --locked --format-version 1 > dependency-metadata.json
 node .github/check-pins.mjs dependency-metadata.json
 cargo clippy --locked --all-targets -- -D warnings
+python3 .ci/provider-controls.py
 cargo test --locked --no-fail-fast
 cargo test --locked --release --no-fail-fast
 

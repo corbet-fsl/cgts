@@ -19,7 +19,7 @@ retained. Only current metadata and opaque spent markers reach storage.
 
 ## Dependency survey
 
-Checked crates.io and GitHub sources on 2026-09-30; direct cvld dependencies
+Checked crates.io and upstream sources on 2026-09-30; direct cvld dependencies
 follow main in Cargo.toml and resolve to one revision each in Cargo.lock. Read each available leaf README
 and contract before integration.
 
@@ -52,7 +52,7 @@ Deploy one database per community; every table also has a composite community
 key. `Storage` has real `MemoryStore` and `LibsqlStore` implementations. A voucher
 receipt and result commit atomically. Replays are refused, including after reopen.
 
-Crow runs `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings`,
+CI runs `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings`,
 `cargo test` and release tests. No Cargo commands run on the workstation.
 Ignored real-Turso probes require explicit operator authorization before selection
 and read TURSO_URL/TURSO_TOKEN only when both are nonempty. They write isolated

@@ -17,7 +17,9 @@ gate. Errors never grant access or expose raw evidence.
 community epoch and transient check-time bindings. `check` validates those
 bindings, combines fresh checks with retained facts and returns `CheckedGates`
 only after a live legal check, including for an empty collection. Duplicate fresh
-gate identities are refused. A fresh fact replaces its retained counterpart.
+gate/level/provider identities are refused. A fresh fact replaces only its retained
+counterpart from the same provider; other authenticated providers remain available
+for provider-specific requirements without increasing distinct-gate thresholds.
 `in_context` refuses mismatched bindings. Plain wire results cannot construct
 these capabilities. Maximum-proof-age policy fails closed because five-field
 gate metadata has no authenticated proof time.

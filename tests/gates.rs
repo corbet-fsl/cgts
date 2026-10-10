@@ -3,6 +3,64 @@ mod common;
 use cgts::*;
 use common::*;
 
+async fn multiple_providers<S: Storage, L: LegalVeto>(keeper: Gatekeeper<S, L>) {
+    let mut snapshot = snapshot("garden", "cvch");
+    snapshot.content.insert(
+        crbk::provider_key(GateLevel::Community, "cvch", "other"),
+        true.into(),
+    );
+    // Use the same real sponsor key as the existing signed voucher fixtures.
+    let other = gates::VoucherGate::new(
+        "other",
+        ed25519_dalek::SigningKey::from_bytes(&[7; 32]).verifying_key(),
+    )
+    .unwrap();
+    let context = context(&snapshot);
+    let first = keeper
+        .run(context, &gate(), &voucher("garden", "provider-one", 2000))
+        .await
+        .unwrap();
+    let second = keeper
+        .run(context, &other, &voucher("garden", "provider-two", 2000))
+        .await
+        .unwrap();
+    let fresh = keeper.check(context, vec![first.clone(), second]).await;
+    assert!(
+        fresh.is_ok(),
+        "distinct authenticated providers must coexist"
+    );
+    let fresh = fresh.unwrap();
+    assert_eq!(
+        fresh.in_context(context).unwrap().len(),
+        2,
+        "fresh evidence must preserve other authenticated providers"
+    );
+    let retained = keeper.check(context, vec![]).await.unwrap();
+    assert_eq!(retained.in_context(context).unwrap().len(), 2);
+    assert!(matches!(
+        keeper.check(context, vec![first.clone(), first]).await,
+        Err(Error::Scope)
+    ));
+    let updated = keeper
+        .run(context, &gate(), &voucher("garden", "provider-three", 2000))
+        .await
+        .unwrap();
+    let merged = keeper.check(context, vec![updated]).await.unwrap();
+    assert_eq!(
+        merged.in_context(context).unwrap().len(),
+        2,
+        "fresh evidence must preserve other authenticated providers"
+    );
+}
+
+#[tokio::test]
+async fn distinct_signed_voucher_providers_coexist_in_memory_and_sql() {
+    multiple_providers(memory("garden")).await;
+    let dir = tempfile::tempdir().unwrap();
+    let db = open(&dir.path().join("providers.db")).await;
+    multiple_providers(sql(&db, "garden")).await;
+}
+
 async fn round_trip<S: Storage, L: LegalVeto>(keeper: Gatekeeper<S, L>) {
     assert_eq!(keeper.community(), "garden");
     let snapshot = snapshot("garden", "cvch");

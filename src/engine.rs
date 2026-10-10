@@ -183,12 +183,18 @@ impl<S: Storage, L: LegalVeto> Gatekeeper<S, L> {
         let mut gates: Vec<_> = self.current(context).await?.into_iter().map(bind).collect();
         let mut seen = std::collections::BTreeSet::new();
         for gate in fresh {
-            if !seen.insert((gate.result.level, gate.result.gate.clone())) {
+            if !seen.insert((
+                gate.result.level,
+                gate.result.gate.clone(),
+                gate.result.provider.clone(),
+            )) {
                 return Err(Error::Scope);
             }
             gate.in_context(context)?;
             gates.retain(|old| {
-                old.result.gate != gate.result.gate || old.result.level != gate.result.level
+                old.result.gate != gate.result.gate
+                    || old.result.level != gate.result.level
+                    || old.result.provider != gate.result.provider
             });
             gates.push(gate);
         }
