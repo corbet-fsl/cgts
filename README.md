@@ -46,16 +46,17 @@ and czkp. CI uses --locked and retains the lockfile for reproducibility.
 
 ## Storage and validation
 
-Apply `cgts::SCHEMA` and `clbs::SCHEMA` in the service's complete crlt migration
+Apply `cgts::SCHEMA` and `cgts::legal_storage::SCHEMA` in the service's complete crlt migration
 history, then construct community-bound stores over its existing database pool.
 Deploy one database per community; every table also has a composite community
 key. `Storage` has real `MemoryStore` and `LibsqlStore` implementations. A voucher
 receipt and result commit atomically. Replays are refused, including after reopen.
 
-GitHub Actions runs `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings`,
+Crow runs `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings`,
 `cargo test` and release tests. No Cargo commands run on the workstation.
-An optional real-Turso test reads TURSO_URL/TURSO_TOKEN only when both are nonempty;
-it writes isolated test rows to a disposable database. Credentials are never
+Ignored real-Turso probes require explicit operator authorization before selection
+and read TURSO_URL/TURSO_TOKEN only when both are nonempty. They write isolated
+test rows to a disposable database. Credentials are never
 committed or configured in public CI.
 
 ## Remaining integration boundaries

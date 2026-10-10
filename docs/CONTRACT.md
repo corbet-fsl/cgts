@@ -74,7 +74,8 @@ any build; CI verifies absence in a release profile with debug assertions enable
 
 The service owns one crlt pool, credentials and migration history. `MemoryStore`
 and `LibsqlStore` implement the same atomic claim/result contract. Install `SCHEMA`
-and `clbs::SCHEMA` with service-assigned migration numbers.
+and `legal_storage::SCHEMA` with service-assigned migration numbers. Legal metadata
+persistence belongs to this host adapter; `clbs` has no database connection.
 
 | Table | Content | Primary key |
 |---|---|---|
@@ -90,13 +91,13 @@ Raw database administration is trusted. Reads return complete results or errors.
 
 ## Validation
 
-GitHub Actions runs formatting, strict Clippy, native and release tests, real
+Crow runs formatting, strict Clippy, native and release tests, real
 libSQL round trips, rollback/concurrency/restart checks, signed vouchers, signed
 v2 profile fixtures, real BBS+ blind issuance and authenticated presentation,
 legal vetoes and compile-fail capability boundaries. It also rejects floating or
 duplicated corbet dependency revisions in Cargo.lock and cargo metadata. The
-optional live Turso test uses a disposable database only when credentials are
-provided. No Cargo runs on the workstation.
+live Turso probes are ignored by default and require explicit authorization,
+selection and disposable database credentials. No Cargo runs on the workstation.
 
 Checked receipts bind the complete resolved setting values and authenticated
 publication issuance time as well as revision/epoch. Reusing a revision while
