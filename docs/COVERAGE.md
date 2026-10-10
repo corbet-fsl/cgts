@@ -88,3 +88,10 @@ The shared checker now has17 regression methods, including changed, duplicate,
 missing and malformed proof dependencies and independent unrelated lock updates.
 These revision-bound evidence assertions qualify exceptions only; Cargo manifests
 still follow main and the first-party policy still requires one revision per crate.
+
+Payment dependency refresh (2026-10-10): the complete CRBK source tree at
+`864e14d8` is identical to `bff7c5db`, and the complete CGRD source tree at
+`038bcfd8` is identical to `fd392985`. The existing catalogue-definition and
+authenticated-community proofs therefore retain exactly the same upstream
+implementation. Only their dependency evidence identities changed. No line or
+branch exception was added, removed or broadened.
