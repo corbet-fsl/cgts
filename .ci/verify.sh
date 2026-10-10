@@ -4,8 +4,6 @@ exec 2>&1
 export CARGO_BUILD_JOBS="${CARGO_BUILD_JOBS:-2}"
 export CARGO_TERM_COLOR="${CARGO_TERM_COLOR:-always}"
 
-cargo update
-cp Cargo.lock "$ARTIFACT_ROOT/Cargo.lock"
 rustc --version
 cargo fmt --all --check
 node --test .github/check-pins.test.mjs
@@ -56,5 +54,6 @@ export CARGO_TARGET_DIR="$coverage_target"
 "$NIGHTLY_CARGO" llvm-cov report --locked --branch --ignore-filename-regex '/tests/' --lcov --output-path coverage.lcov
 "$NIGHTLY_CARGO" llvm-cov report --locked --branch --ignore-filename-regex '/tests/' --text --output-path coverage.txt
 )
+cp coverage.json coverage.lcov coverage.txt "$ARTIFACT_ROOT/"
 python3 .github/test-source-coverage.py
 python3 .github/check-source-coverage.py coverage.lcov coverage.json coverage.txt
