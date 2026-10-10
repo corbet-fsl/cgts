@@ -33,7 +33,7 @@
     "evidence_packages": {
       "cgrd": {
         "version": "0.0.0",
-        "source": "git+https://git.corbet.ch/corbet-foss/cgrd?branch=main#038bcfd849e5181710051816f9ccaf56ed5dfc98"
+        "source": "git+https://git.corbet.ch/corbet-foss/cgrd?branch=main#fb8322374bc0579a39c22f277f89cdde83cd155f"
       }
     }
   },

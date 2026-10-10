@@ -95,3 +95,9 @@ Payment dependency refresh (2026-10-10): the complete CRBK source tree at
 authenticated-community proofs therefore retain exactly the same upstream
 implementation. Only their dependency evidence identities changed. No line or
 branch exception was added, removed or broadened.
+
+Reusable-domain migration (2026-10-10): cgrd `fb8322374bc0579a39c22f277f89cdde83cd155f`
+removes runtime SQL and exposes read-only snapshot storage accessors. Its complete
+`src/guard.rs` is byte-identical to `038bcfd849e5181710051816f9ccaf56ed5dfc98`; root
+review confirmed the authenticated-community relation is unchanged. The existing
+exception's dependency identity was refreshed; no exclusion was added or widened.
