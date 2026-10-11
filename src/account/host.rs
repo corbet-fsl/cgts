@@ -4,6 +4,8 @@ use super::*;
 /// Host configuration and settlement only; no deserializer or signing callback.
 /// The host independently authenticates common roots, operators and input batches.
 pub enum HostRequest {
+    /// Catch up only through original live signed predecessor transitions.
+    ReconcileAdmissionKeys(cblc::accounting_ledger::AdmissionKeyReconciliation),
     /// Reverify an exact completed pin spend under the original native owner.
     VerifyPinChange(crate::pins::PinChangeRequest),
     /// Produce one original epoch object and corresponding actual verifier material.
@@ -33,6 +35,8 @@ pub enum HostRequest {
 /// Data from the same native owner. Publication data becomes authenticated only
 /// after the actual caller Policy signer and Beacon publish it under their lease.
 pub enum HostResponse {
+    /// Exact durable installed original ring and transition revision.
+    AdmissionKeys(cblc::accounting_ledger::AdmissionKeyState),
     /// Native completed-spend capability, with no current member authority.
     VerifiedPinChange(crate::pins::SpentChange),
     /// Original publication object and matching actual native material.

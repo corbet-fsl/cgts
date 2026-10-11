@@ -26,6 +26,9 @@ where
 {
     fn host(&mut self, request: HostRequest) -> std::result::Result<HostResponse, cblc::Error> {
         match request {
+            HostRequest::ReconcileAdmissionKeys(request) => self
+                .reconcile_admission_keys(request)
+                .map(HostResponse::AdmissionKeys),
             HostRequest::VerifyPinChange(request) => {
                 request.verify(self).map(HostResponse::VerifiedPinChange)
             }
