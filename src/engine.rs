@@ -120,6 +120,42 @@ impl<S: Storage, L: LegalVeto> Gatekeeper<S, L> {
         Ok(self)
     }
 
+    /// Install the same actual native owner with matched proof cancellation and
+    /// mandatory join ownership. Generic services use explicit drain-only cleanup.
+    pub async fn with_native_account_service<C>(
+        mut self,
+        service: cblc::accounting_service::AccountService<
+            cblc::accounting_service::NativeAccountVerifier,
+            C,
+        >,
+    ) -> Result<Self>
+    where
+        C: Fn() -> u64 + Send + 'static,
+    {
+        let community = self.community().to_owned();
+        let configured = self.accounts.is_some();
+        self.accounts = Some(
+            tokio::task::spawn_blocking(move || {
+                if service.community() != community {
+                    return Err(Error::Scope);
+                }
+                if configured {
+                    return Err(Error::Invalid);
+                }
+                crate::account::Accounts::native(service)
+            })
+            .await
+            .map_err(|_| Error::Storage)??,
+        );
+        Ok(self)
+    }
+
+    /// Retain outside every owner lease/lock, then join before host storage and
+    /// async runtime teardown. This cannot authorize or reset member work.
+    pub fn account_shutdown(&self) -> Result<crate::account::AccountShutdown> {
+        Ok(self.accounts.as_ref().ok_or(Error::Disabled)?.shutdown())
+    }
+
     /// Forward canonical account input under the caller's actual member/policy
     /// leases. Pseudonym and leases come from Community, never the request body.
     /// This does not create a gate result or activate record/punishment gates.

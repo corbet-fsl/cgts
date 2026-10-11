@@ -14,6 +14,10 @@ struct Config {
 }
 
 pub fn verifier() -> NativeAccountVerifier {
+    verifier_with_limit(1024)
+}
+
+pub fn verifier_with_limit(max_proof_bytes: usize) -> NativeAccountVerifier {
     let root = PathBuf::from(
         std::env::var_os("CBLC_PROOF_DIRECTORY")
             .expect("account tests require original authenticated native artifact fixtures"),
@@ -48,7 +52,7 @@ pub fn verifier() -> NativeAccountVerifier {
                 .into(),
             timeout: Duration::from_secs(180),
             maximum_parallel: 1,
-            max_proof_bytes: 1024,
+            max_proof_bytes,
             threads: 1,
             memory_megabytes: 8192,
         },

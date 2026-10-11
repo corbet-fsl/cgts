@@ -55,17 +55,22 @@ impl Accounts {
         authority: H,
     ) -> Result<(HostResponse, H)> {
         let (reply, response) = tokio::sync::oneshot::channel();
-        self.0
-            .send(Box::new(move |service| {
-                let result = service
-                    .host(request)
-                    .map_err(Error::Account)
-                    .map(|result| (result, authority));
-                // Success returns the same guard for Policy/Beacon completion. If
-                // the caller cancelled, its guard drops here after native work.
-                let _ = reply.send(result);
-            }))
-            .map_err(|_| Error::Storage)?;
+        let state = self.shutdown.state();
+        self.shutdown.send(Box::new(move |service| {
+            let result = if state.closed() {
+                Err(Error::Storage)
+            } else {
+                service.host(request).map_err(Error::Account)
+            };
+            let result = if state.closed() {
+                Err(Error::Storage)
+            } else {
+                result.map(|result| (result, authority))
+            };
+            // Success returns the same guard for Policy/Beacon completion. If
+            // the caller cancelled, its guard drops here after native work.
+            let _ = reply.send(result);
+        }))?;
         response.await.map_err(|_| Error::Storage)?
     }
 }

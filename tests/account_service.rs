@@ -6,6 +6,8 @@ mod common;
 mod host;
 #[path = "account_service/native.rs"]
 mod native;
+#[path = "account_service/shutdown.rs"]
+mod shutdown;
 #[path = "account_service/storage.rs"]
 mod storage;
 use cblc::{accounting::*, accounting_ledger::*, accounting_service::*, admission::*};

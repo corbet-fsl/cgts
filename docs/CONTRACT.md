@@ -178,3 +178,21 @@ calls retain it until native completion. A possibly committed native operation
 followed by any later publication failure requires reconciliation, never a
 replacement ledger or a claim of rollback. Root-board remains its separate
 original CPSD/Policy owner, not an account-worker request.
+
+Native hosts install `with_native_account_service` and retain `account_shutdown`
+outside Community/Policy/member locks. The handle belongs to that exact service:
+it fences new and queued work, cancels every real account/extension proof owner,
+and joins the original worker after in-flight operations and service final drop.
+Caller cancellation cannot abandon the join; concurrent/later waiters observe
+the same actual completion. A possibly committed operation whose response is
+fenced reports uncertainty, not known nonexecution. The generic constructor has
+explicit drain-only semantics and does not pretend it can preempt a verifier.
+
+Graceful host drain budgets are separate from mandatory cleanup. Hosts await this
+join before tearing down the CRLT async runtime; operating-system process cleanup
+has no hard real-time promise. Dropping the owner only fences/cancels it and never
+blocks an async reactor or reports joined completion. The host retains a shutdown
+handle before any fallible post-construction await and joins on all setup/error
+paths; Drop is not a substitute for this mandatory lifetime contract.
+Real SQL lease/cancelled-wait tests and an actual native proof followed by clone
+cancellation are authored; execution remains dependent on the useful native route.

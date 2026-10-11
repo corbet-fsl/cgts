@@ -1,10 +1,12 @@
 //! The single configured Balance service, executed outside the async executor.
 use crate::{Error, Result};
 use cblc::{accounting::AccountProofVerifier, accounting_service::AccountService};
-use std::sync::mpsc;
+use std::sync::{Arc, mpsc};
 
 mod host;
 pub use host::{HostRequest, HostResponse};
+mod shutdown;
+pub use shutdown::AccountShutdown;
 
 pub use cblc::accounting_service::{AccountServiceRequest, AccountServiceResponse};
 
@@ -73,19 +75,43 @@ where
 
 type Command = Box<dyn FnOnce(&mut dyn Service) + Send>;
 
-pub(crate) struct Accounts(mpsc::Sender<Command>);
+pub(crate) struct Accounts {
+    shutdown: AccountShutdown,
+}
 
 impl Accounts {
-    pub(crate) fn new<V, C>(mut service: AccountService<V, C>) -> Result<Self>
+    pub(crate) fn new<V, C>(service: AccountService<V, C>) -> Result<Self>
+    where
+        V: AccountProofVerifier + Send + 'static,
+        C: Fn() -> u64 + Send + 'static,
+    {
+        Self::start(service, None)
+    }
+
+    pub(crate) fn native<C>(
+        service: AccountService<cblc::accounting_service::NativeAccountVerifier, C>,
+    ) -> Result<Self>
+    where
+        C: Fn() -> u64 + Send + 'static,
+    {
+        let cancellation = service.cancellation();
+        Self::start(service, Some(cancellation))
+    }
+
+    fn start<V, C>(
+        mut service: AccountService<V, C>,
+        cancellation: Option<cblc::accounting_service::NativeAccountCancellation>,
+    ) -> Result<Self>
     where
         V: AccountProofVerifier + Send + 'static,
         C: Fn() -> u64 + Send + 'static,
     {
         let (sender, receiver) = mpsc::channel::<Command>();
+        let state = Arc::new(shutdown::State::default());
         // Balance's original native store owns its runtime. Both all operations
         // and its final drop belong outside the async executor. A single worker
         // owns that exact service; no parallel ledger or state copy is created.
-        std::thread::Builder::new()
+        let worker = std::thread::Builder::new()
             .name("balance-service".into())
             .spawn(move || {
                 for command in receiver {
@@ -93,7 +119,13 @@ impl Accounts {
                 }
             })
             .map_err(|_| Error::Storage)?;
-        Ok(Self(sender))
+        Ok(Self {
+            shutdown: AccountShutdown::new(sender, worker, cancellation, state),
+        })
+    }
+
+    pub(crate) fn shutdown(&self) -> AccountShutdown {
+        self.shutdown.clone()
     }
 
     pub(crate) async fn handle<H: Send + 'static>(
@@ -103,17 +135,31 @@ impl Accounts {
         authority: H,
     ) -> Result<AccountServiceResponse> {
         let (reply, response) = tokio::sync::oneshot::channel();
-        self.0
-            .send(Box::new(move |service| {
-                // Actual owner leases survive caller cancellation and remain
-                // held until the original service has finished its operation.
-                let _authority = authority;
-                let result = service.handle(&pseudonym, request).map_err(Error::Account);
-                let _ = reply.send(result);
-            }))
-            .map_err(|_| Error::Storage)?;
+        let state = self.shutdown.state();
+        self.shutdown.send(Box::new(move |service| {
+            // Actual owner leases survive caller cancellation and remain
+            // held until the original service has finished its operation.
+            let _authority = authority;
+            let result = if state.closed() {
+                Err(Error::Storage)
+            } else {
+                service.handle(&pseudonym, request).map_err(Error::Account)
+            };
+            let result = if state.closed() {
+                Err(Error::Storage)
+            } else {
+                result
+            };
+            let _ = reply.send(result);
+        }))?;
         // If the worker panics, its receiver drops and permanently fences this
         // service. Pending and future calls fail; there is no reconstruction.
         response.await.map_err(|_| Error::Storage)?
+    }
+}
+
+impl Drop for Accounts {
+    fn drop(&mut self) {
+        self.shutdown.fence();
     }
 }
