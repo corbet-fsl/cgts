@@ -16,29 +16,16 @@ async fn every_query_uses_an_index() {
         handle
             .execute(
                 INSERT,
-                params![
-                    "id",
-                    "alice",
-                    "reference",
-                    "root",
-                    "legal",
-                    "court",
-                    "\"All\"",
-                    100,
-                    200
-                ],
+                params!["id", "alice", "reference", "root", "legal", "court"],
             )
             .await
             .unwrap();
     }
     for (sql, values) in [
         (BY_ID, vec![Value::Text("id".into())]),
-        (
-            ACTIVE,
-            vec![Value::Text("alice".into()), Value::Integer(150)],
-        ),
-        (REVOCATIONS, vec![Value::Integer(150)]),
-        (COUNTS, vec![Value::Integer(150)]),
+        (ORDERS, vec![Value::Text("alice".into())]),
+        (REVOCATIONS, vec![]),
+        (COUNTS, vec![]),
         (
             INSERT,
             vec![
@@ -48,9 +35,6 @@ async fn every_query_uses_an_index() {
                 Value::Text("root".into()),
                 Value::Text("legal".into()),
                 Value::Text("court".into()),
-                Value::Text("\"All\"".into()),
-                Value::Integer(100),
-                Value::Integer(200),
             ],
         ),
     ] {
@@ -63,17 +47,10 @@ async fn every_query_uses_an_index() {
     }
     // Execute every read as well: these exercise crlt's SQL scoping and decoding.
     assert_eq!(scoped.query(BY_ID, ["id"]).await.unwrap().len(), 1);
+    assert_eq!(scoped.query(ORDERS, ["alice"]).await.unwrap().len(), 1);
+    assert_eq!(scoped.query(REVOCATIONS, params![]).await.unwrap().len(), 1);
     assert_eq!(
-        scoped
-            .query(ACTIVE, params!["alice", 150])
-            .await
-            .unwrap()
-            .len(),
-        1
-    );
-    assert_eq!(scoped.query(REVOCATIONS, [150]).await.unwrap().len(), 1);
-    assert_eq!(
-        scoped.query(COUNTS, [150]).await.unwrap()[0]
+        scoped.query(COUNTS, params![]).await.unwrap()[0]
             .get_i64(0)
             .unwrap(),
         1

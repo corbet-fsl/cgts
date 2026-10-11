@@ -360,7 +360,8 @@ async fn real_legal_order_cannot_be_bypassed_by_switch_or_empty_policy() {
             .await,
         Err(Error::Vetoed)
     ));
-    assert!(
+    // A block is permanent and total: no other action and no later time escapes it.
+    assert!(matches!(
         keeper
             .steps(
                 Context {
@@ -369,23 +370,21 @@ async fn real_legal_order_cannot_be_bypassed_by_switch_or_empty_policy() {
                 },
                 &[gate().descriptor()]
             )
-            .await
-            .is_ok()
-    );
-    assert!(
-        keeper
-            .decide(
-                Context {
-                    now: 1200,
-                    ..context(&snapshot)
-                },
-                MembershipState::Pending,
-                &[]
-            )
-            .await
-            .unwrap()
-            .allowed
-    );
+            .await,
+        Err(Error::Vetoed)
+    ));
+    let later = keeper
+        .decide(
+            Context {
+                now: 1_000_000,
+                ..context(&snapshot)
+            },
+            MembershipState::Pending,
+            &[],
+        )
+        .await
+        .unwrap();
+    assert!(!later.allowed && later.legal_veto);
 }
 
 #[tokio::test]

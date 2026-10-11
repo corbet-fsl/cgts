@@ -4,11 +4,11 @@ use cgts::legal_storage::{LibsqlStore, SCHEMA};
 mod common;
 
 use clbs::{Append, Counts, Error, Gate, MemoryStore, State, Store};
-use common::{TestClock, TestVerifier, ban, legal, sign};
+use common::{TestVerifier, ban, legal, sign};
 use crlt::{Config, Db, Migration};
 
 #[tokio::test]
-async fn reopening_preserves_expired_orders_and_self_bans() {
+async fn reopening_preserves_permanent_orders_and_self_bans() {
     let directory = tempfile::tempdir().unwrap();
     let path = directory.path().join("persist.db");
     let url = format!("file://{}", path.display());
@@ -23,7 +23,6 @@ async fn reopening_preserves_expired_orders_and_self_bans() {
         let gate = Gate::new(
             LibsqlStore::new(&db, "community-a").unwrap(),
             TestVerifier::new("community-a"),
-            TestClock::new(150),
         );
         gate.record_legal(&sign(legal("legal"))).await.unwrap();
         gate.self_ban(&sign(ban("self"))).await.unwrap();
@@ -41,7 +40,6 @@ async fn reopening_preserves_expired_orders_and_self_bans() {
     let gate = Gate::new(
         LibsqlStore::new(&db, "community-a").unwrap(),
         TestVerifier::new("community-a"),
-        TestClock::new(i64::MAX),
     );
     assert_eq!(
         gate.record("legal").await.unwrap().unwrap().order(),
@@ -56,11 +54,9 @@ async fn reopening_preserves_expired_orders_and_self_bans() {
         Counts {
             legal_orders: 1,
             self_bans: 1,
-            active_legal_orders: 0,
-            active_self_bans: 1
         }
     );
-    assert_eq!(gate.revocations().await.unwrap().len(), 1);
+    assert_eq!(gate.revocations().await.unwrap().len(), 2);
     // Reads create no records, and the durable table has no evidence or check-time columns.
     let rows = db
         .community("community-a")
@@ -69,7 +65,7 @@ async fn reopening_preserves_expired_orders_and_self_bans() {
         .await
         .unwrap();
     assert_eq!(rows.len(), 2);
-    assert_eq!(rows[0].columns().len(), 10);
+    assert_eq!(rows[0].columns().len(), 7);
     for column in rows[0].columns() {
         assert!(
             ![
@@ -85,16 +81,8 @@ async fn reopening_preserves_expired_orders_and_self_bans() {
 }
 
 async fn isolation<S: Store + Clone>(first: S, second: S) {
-    let a = Gate::new(
-        first.clone(),
-        TestVerifier::new("community-a"),
-        TestClock::new(150),
-    );
-    let b = Gate::new(
-        second.clone(),
-        TestVerifier::new("community-b"),
-        TestClock::new(150),
-    );
+    let a = Gate::new(first.clone(), TestVerifier::new("community-a"));
+    let b = Gate::new(second.clone(), TestVerifier::new("community-b"));
     a.record_legal(&sign(legal("shared-id"))).await.unwrap();
     assert_eq!(b.check("alice").await.unwrap(), State::Green);
     assert_eq!(b.record("shared-id").await.unwrap(), None);
@@ -155,7 +143,7 @@ async fn concurrent_retries_commit_one_record() {
     for _ in 0..8 {
         let clone = store.clone();
         tasks.spawn(async move {
-            Gate::new(clone, TestVerifier::new("community-a"), TestClock::new(150))
+            Gate::new(clone, TestVerifier::new("community-a"))
                 .record_legal(&sign(legal("same")))
                 .await
         });
@@ -169,7 +157,7 @@ async fn concurrent_retries_commit_one_record() {
         }
     }
     assert_eq!((inserted, unchanged), (1, 7));
-    assert_eq!(store.counts(150).await.unwrap().legal_orders, 1);
+    assert_eq!(store.counts().await.unwrap().legal_orders, 1);
 }
 
 #[tokio::test]
@@ -178,7 +166,7 @@ async fn missing_schema_and_corrupt_metadata_fail_closed() {
     let url = format!("file://{}", directory.path().join("failures.db").display());
     let db = Db::open(Config::new(url, "")).await.unwrap();
     let store = LibsqlStore::new(&db, "community-a").unwrap();
-    let gate = Gate::new(store, TestVerifier::new("community-a"), TestClock::new(150));
+    let gate = Gate::new(store, TestVerifier::new("community-a"));
     assert_eq!(gate.check("alice").await, Err(Error::Storage));
     assert_eq!(
         gate.record_legal(&sign(legal("missing"))).await,
@@ -193,8 +181,8 @@ async fn missing_schema_and_corrupt_metadata_fail_closed() {
     db.community("community-a")
         .unwrap()
         .execute(
-            "UPDATE clbs_orders SET scope = ?1 WHERE id = ?2",
-            ["{invalid-json", "corrupt"],
+            "UPDATE clbs_orders SET reference = ?1 WHERE id = ?2",
+            ["", "corrupt"],
         )
         .await
         .unwrap();
@@ -215,7 +203,6 @@ async fn row_limits_refuse_partial_verdicts_and_snapshots() {
     let full = Gate::new(
         LibsqlStore::new(&db, "community-a").unwrap(),
         TestVerifier::new("community-a"),
-        TestClock::new(150),
     );
     full.record_legal(&sign(legal("one"))).await.unwrap();
     full.record_legal(&sign(legal("two"))).await.unwrap();
@@ -229,13 +216,8 @@ async fn row_limits_refuse_partial_verdicts_and_snapshots() {
     let limited = Gate::new(
         LibsqlStore::new(&limited_db, "community-a").unwrap(),
         TestVerifier::new("community-a"),
-        TestClock::new(150),
     );
     assert_eq!(limited.check("alice").await, Err(Error::Storage));
-    assert_eq!(
-        limited.check_action("alice", "read").await,
-        Err(Error::Storage)
-    );
     assert_eq!(limited.revocations().await, Err(Error::Storage));
     assert!(limited.record("one").await.unwrap().is_some());
     assert_eq!(limited.counts().await.unwrap().legal_orders, 2);
@@ -277,15 +259,11 @@ fn system_clock_returns_supported_samples_and_safe_errors() {
 }
 
 #[tokio::test]
-async fn malformed_sql_types_and_valid_json_with_invalid_scope_fail_closed() {
+async fn malformed_sql_types_and_blank_metadata_fail_closed() {
     let directory = tempfile::tempdir().unwrap();
     let db = common::open(&directory.path().join("invalid-types.db")).await;
     let store = LibsqlStore::new(&db, "community-a").unwrap();
-    let gate = Gate::new(
-        store.clone(),
-        TestVerifier::new("community-a"),
-        TestClock::new(150),
-    );
+    let gate = Gate::new(store.clone(), TestVerifier::new("community-a"));
     let scoped = db.community("community-a").unwrap();
     for (id, sql, value) in [
         (
@@ -294,14 +272,9 @@ async fn malformed_sql_types_and_valid_json_with_invalid_scope_fail_closed() {
             crlt::Value::Blob(vec![1, 2, 3]),
         ),
         (
-            "end-type",
-            "UPDATE clbs_orders SET ends_at = ?1 WHERE id = ?2",
-            crlt::Value::Text("not-a-timestamp".into()),
-        ),
-        (
-            "empty-scope",
-            "UPDATE clbs_orders SET scope = ?1 WHERE id = ?2",
-            crlt::Value::Text("{\"Actions\":[]}".into()),
+            "blank-reference",
+            "UPDATE clbs_orders SET reference = ?1 WHERE id = ?2",
+            crlt::Value::Text(" ".into()),
         ),
     ] {
         gate.record_legal(&sign(legal(id))).await.unwrap();
@@ -312,11 +285,11 @@ async fn malformed_sql_types_and_valid_json_with_invalid_scope_fail_closed() {
             Err(Error::Storage)
         );
     }
-    assert_eq!(store.revocations(150).await, Err(Error::Storage));
+    assert_eq!(store.revocations().await, Err(Error::Storage));
 }
 
 #[tokio::test]
-async fn host_storage_checks_identifiers_time_and_conflicting_metadata() {
+async fn host_storage_checks_identifiers_and_conflicting_metadata() {
     let directory = tempfile::tempdir().unwrap();
     let db = common::open(&directory.path().join("validation.db")).await;
     for id in ["", " ", "a\0b", &"x".repeat(1025)] {
@@ -324,11 +297,8 @@ async fn host_storage_checks_identifiers_time_and_conflicting_metadata() {
     }
     let store = LibsqlStore::new(&db, "community-a").unwrap();
     assert!(store.record("").await.is_err());
-    assert!(store.active("", 150).await.is_err());
-    assert!(store.active("alice", -1).await.is_err());
-    assert!(store.revocations(-1).await.is_err());
-    assert!(store.counts(-1).await.is_err());
-    let gate = Gate::new(store, TestVerifier::new("community-a"), TestClock::new(150));
+    assert!(store.orders("").await.is_err());
+    let gate = Gate::new(store, TestVerifier::new("community-a"));
     gate.record_legal(&sign(legal("same"))).await.unwrap();
     assert_eq!(
         gate.record_legal(&sign(legal("same"))).await.unwrap(),

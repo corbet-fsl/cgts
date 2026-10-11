@@ -38,23 +38,15 @@ impl<S: clbs::Store, V: clbs::Verifier> LegalGate<S, V> {
     }
 }
 
-#[derive(Clone, Copy)]
-struct At(i64);
-impl clbs::Clock for At {
-    fn now(&self) -> clbs::Result<i64> {
-        Ok(self.0)
-    }
-}
-
 impl<S: clbs::Store + Clone, V: clbs::Verifier + Clone> LegalVeto for LegalGate<S, V> {
     fn community(&self) -> &str {
         self.store.community()
     }
     async fn check(&self, context: Context<'_>) -> Result<()> {
         context.validate(self.community())?;
-        let gate = clbs::Gate::new(self.store.clone(), self.verifier.clone(), At(context.now));
+        let gate = clbs::Gate::new(self.store.clone(), self.verifier.clone());
         match gate
-            .check_action(context.subject, context.action)
+            .check(context.subject)
             .await
             .map_err(|_| Error::Legal)?
         {

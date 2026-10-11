@@ -4,7 +4,7 @@ mod common;
 
 use cgts::legal_storage::{LibsqlStore, SCHEMA};
 use clbs::{Append, Gate, State};
-use common::{TestClock, TestVerifier, legal, sign};
+use common::{TestVerifier, legal, sign};
 use crlt::{Config, Db, Migration};
 
 #[tokio::test]
@@ -31,8 +31,7 @@ async fn optional_real_turso_round_trip() {
         .as_nanos();
     let community = format!("clbs-test-{}-{unique}", std::process::id());
     let store = LibsqlStore::new(&db, &community).unwrap();
-    let clock = TestClock::new(150);
-    let gate = Gate::new(store, TestVerifier::new(&community), clock.clone());
+    let gate = Gate::new(store, TestVerifier::new(&community));
     let mut order = legal("remote-round-trip");
     order.community = community;
     let signed = sign(order);
@@ -48,8 +47,5 @@ async fn optional_real_turso_round_trip() {
     );
     assert!(matches!(gate.check("alice").await.unwrap(), State::Red(_)));
     assert_eq!(gate.revocations().await.unwrap().len(), 1);
-    assert_eq!(gate.counts().await.unwrap().active_legal_orders, 1);
-    clock.set(200);
-    assert_eq!(gate.check("alice").await.unwrap(), State::Green);
     assert_eq!(gate.counts().await.unwrap().legal_orders, 1);
 }

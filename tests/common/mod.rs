@@ -96,11 +96,6 @@ pub fn order(community: &str) -> clbs::SignedOrder {
         kind: clbs::OrderKind::Legal {
             authority: "test-court".into(),
         },
-        scope: clbs::Scope::Actions(["enter".into()].into()),
-        period: clbs::Period {
-            starts_at: 1100,
-            ends_at: Some(1200),
-        },
     };
     let proof = SigningKey::from_bytes(&[9; 32])
         .sign(&order.signing_payload().unwrap())

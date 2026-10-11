@@ -3,7 +3,7 @@
 mod common;
 use cgts::legal_storage::{LibsqlStore, SCHEMA};
 use clbs::{Append, Error, Gate, MemoryStore, Record, Store};
-use common::{TestClock, TestVerifier, legal, sign};
+use common::{TestVerifier, legal, sign};
 
 const NOTICE_SCHEMA: &str = "CREATE TABLE legal_notice (community_id TEXT NOT NULL, id TEXT NOT NULL, PRIMARY KEY (community_id, id)) WITHOUT ROWID;";
 async fn fixture() -> (tempfile::TempDir, crlt::Db, LibsqlStore, Record) {
@@ -23,7 +23,6 @@ async fn fixture() -> (tempfile::TempDir, crlt::Db, LibsqlStore, Record) {
     let source = Gate::new(
         MemoryStore::new("community-a").unwrap(),
         TestVerifier::new("community-a"),
-        TestClock::new(150),
     );
     source.record_legal(&sign(legal("atomic"))).await.unwrap();
     let record = source.record("atomic").await.unwrap().unwrap();

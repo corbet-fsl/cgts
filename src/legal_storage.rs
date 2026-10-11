@@ -2,18 +2,20 @@
 use crlt::{Db, Row, Value, params};
 use std::{future::Future, pin::Pin};
 
-use clbs::{Append, Counts, Error, Order, OrderKind, Period, Record, Result, Revocation, Store};
+use clbs::{Append, Counts, Error, Order, OrderKind, Record, Result, Revocation, Store};
 
 /// Trusted DDL for the service's complete crlt migration history.
 /// The composition root assigns its version and applies it before constructing stores.
 pub const SCHEMA: &str = include_str!("legal_schema.sql");
 
-const BY_ID: &str = "SELECT id, subject, reference, entered_by, kind, authority, scope, starts_at, ends_at FROM clbs_orders WHERE id = ?1";
-const SELF_BAN: &str = "SELECT id, subject, reference, entered_by, kind, authority, scope, starts_at, ends_at FROM clbs_orders WHERE subject = ?1 AND kind = 'self_ban' LIMIT 1";
-const ACTIVE: &str = "SELECT id, subject, reference, entered_by, kind, authority, scope, starts_at, ends_at FROM clbs_orders WHERE subject = ?1 AND starts_at <= ?2 AND (ends_at IS NULL OR ends_at > ?2) ORDER BY id";
-const REVOCATIONS: &str = "SELECT id, subject, reference, entered_by, kind, authority, scope, starts_at, ends_at FROM clbs_orders WHERE starts_at <= ?1 AND (ends_at IS NULL OR ends_at > ?1) ORDER BY id";
-const COUNTS: &str = "SELECT COUNT(CASE WHEN kind = 'legal' THEN 1 END), COUNT(CASE WHEN kind = 'self_ban' THEN 1 END), COUNT(CASE WHEN kind = 'legal' AND starts_at <= ?1 AND (ends_at IS NULL OR ends_at > ?1) THEN 1 END), COUNT(CASE WHEN kind = 'self_ban' AND starts_at <= ?1 AND (ends_at IS NULL OR ends_at > ?1) THEN 1 END) FROM clbs_orders";
-const INSERT: &str = "INSERT INTO clbs_orders (id, subject, reference, entered_by, kind, authority, scope, starts_at, ends_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)";
+const BY_ID: &str =
+    "SELECT id, subject, reference, entered_by, kind, authority FROM clbs_orders WHERE id = ?1";
+const SELF_BAN: &str = "SELECT id, subject, reference, entered_by, kind, authority FROM clbs_orders WHERE subject = ?1 AND kind = 'self_ban' LIMIT 1";
+const ORDERS: &str = "SELECT id, subject, reference, entered_by, kind, authority FROM clbs_orders WHERE subject = ?1 ORDER BY id";
+const REVOCATIONS: &str =
+    "SELECT id, subject, reference, entered_by, kind, authority FROM clbs_orders ORDER BY id";
+const COUNTS: &str = "SELECT COUNT(CASE WHEN kind = 'legal' THEN 1 END), COUNT(CASE WHEN kind = 'self_ban' THEN 1 END) FROM clbs_orders";
+const INSERT: &str = "INSERT INTO clbs_orders (id, subject, reference, entered_by, kind, authority) VALUES (?1, ?2, ?3, ?4, ?5, ?6)";
 
 /// libSQL persistence through crlt's scoped, index-checked database facade.
 /// Deploy one database per community. Clones share the underlying database pool.
@@ -53,12 +55,6 @@ impl LibsqlStore {
             reference: row.get_str(2).map_err(db_error)?.into(),
             entered_by: row.get_str(3).map_err(db_error)?.into(),
             kind,
-            scope: serde_json::from_str(row.get_str(6).map_err(db_error)?)
-                .map_err(|_| Error::Storage)?,
-            period: Period {
-                starts_at: row.get_i64(7).map_err(db_error)?,
-                ends_at: optional_time(row, 8)?,
-            },
         };
         Record::restore_trusted(order).map_err(|_| Error::Storage)
     }
@@ -99,7 +95,6 @@ impl LibsqlStore {
             OrderKind::Legal { authority } => ("legal", Some(authority.clone())),
             OrderKind::SelfBan => ("self_ban", None),
         };
-        let scope = serde_json::to_string(&order.scope).map_err(|_| Error::Storage)?;
         tx.execute(
             INSERT,
             params![
@@ -108,10 +103,7 @@ impl LibsqlStore {
                 order.reference.clone(),
                 order.entered_by.clone(),
                 kind,
-                authority,
-                scope,
-                order.period.starts_at,
-                order.period.ends_at
+                authority
             ],
         )
         .await
@@ -157,11 +149,10 @@ impl Store for LibsqlStore {
             .transpose()
     }
 
-    async fn active(&self, subject: &str, at: i64) -> Result<Vec<Record>> {
+    async fn orders(&self, subject: &str) -> Result<Vec<Record>> {
         text(subject)?;
-        timestamp(at)?;
         self.db
-            .query(ACTIVE, params![subject, at])
+            .query(ORDERS, [subject])
             .await
             .map_err(db_error)?
             .iter()
@@ -169,10 +160,9 @@ impl Store for LibsqlStore {
             .collect()
     }
 
-    async fn revocations(&self, at: i64) -> Result<Vec<Revocation>> {
-        timestamp(at)?;
+    async fn revocations(&self) -> Result<Vec<Revocation>> {
         self.db
-            .query(REVOCATIONS, [at])
+            .query(REVOCATIONS, params![])
             .await
             .map_err(db_error)?
             .iter()
@@ -180,9 +170,8 @@ impl Store for LibsqlStore {
             .collect()
     }
 
-    async fn counts(&self, at: i64) -> Result<Counts> {
-        timestamp(at)?;
-        let rows = self.db.query(COUNTS, [at]).await.map_err(db_error)?;
+    async fn counts(&self) -> Result<Counts> {
+        let rows = self.db.query(COUNTS, params![]).await.map_err(db_error)?;
         let row = rows.first().ok_or(Error::Storage)?;
         let count = |index| -> Result<u64> {
             row.get_i64(index)
@@ -193,17 +182,7 @@ impl Store for LibsqlStore {
         Ok(Counts {
             legal_orders: count(0)?,
             self_bans: count(1)?,
-            active_legal_orders: count(2)?,
-            active_self_bans: count(3)?,
         })
-    }
-}
-
-fn optional_time(row: &Row, index: usize) -> Result<Option<i64>> {
-    match row.get_value(index).map_err(db_error)? {
-        Value::Null => Ok(None),
-        Value::Integer(value) => Ok(Some(*value)),
-        _ => Err(Error::Storage),
     }
 }
 
@@ -217,13 +196,6 @@ fn db_error(_: crlt::Error) -> Error {
 fn text(value: &str) -> Result<()> {
     if value.trim().is_empty() || value.len() > 1024 || value.chars().any(char::is_control) {
         Err(Error::Invalid("invalid legal storage identifier"))
-    } else {
-        Ok(())
-    }
-}
-fn timestamp(at: i64) -> Result<()> {
-    if at < 0 {
-        Err(Error::Invalid("timestamp must be nonnegative"))
     } else {
         Ok(())
     }
