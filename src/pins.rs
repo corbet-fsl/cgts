@@ -1,5 +1,5 @@
-//! Canonical pin-spend boundary. Activation awaits the verified acceptance
-//! adapter; issuer signatures alone cannot create an atomic pin-change witness.
+//! Canonical pin-spend boundary. Only the configured native account worker can
+//! create the sealed completed-spend capability; signatures alone cannot.
 use crate::{Error, Result};
 use cpns::server::{Change, ChangeTokenVerifier, TokenRejected};
 
@@ -11,12 +11,10 @@ use cpns::server::{Change, ChangeTokenVerifier, TokenRejected};
 /// let spent: cgts::pins::SpentChange = raw.into();
 /// ```
 pub struct SpentChange {
-    _sealed: (),
+    pub(crate) verified: cblc::pins::VerifiedPinChange,
 }
 
-/// The only production cpns spend adapter used by cmbr. It fails closed while
-/// the verified acceptance adapter is unavailable, including when a dependency enables a
-/// cblc issuer harness feature through feature unification.
+/// The production CPNS adapter accepts only the sealed native owner capability.
 #[derive(Clone, Copy, Default)]
 pub struct PinSpendVerifier;
 
@@ -24,10 +22,63 @@ impl ChangeTokenVerifier for PinSpendVerifier {
     type Token = SpentChange;
     async fn verify_spent(
         &self,
-        _: &Change<'_>,
-        _: &SpentChange,
+        change: &Change<'_>,
+        spent: &SpentChange,
     ) -> std::result::Result<(), TokenRejected> {
-        Err(TokenRejected)
+        spent
+            .verified
+            .check_change(change)
+            .map_err(|_| TokenRejected)
+    }
+}
+
+/// Transient host-selected exact change and bounded original receipt bytes.
+/// This request is untrusted evidence, never a spend capability or wire command.
+pub struct PinChangeRequest {
+    community: String,
+    member: String,
+    field: String,
+    expected: cpns::server::Pin,
+    replacement: cpns::Fingerprint,
+    evidence: Vec<u8>,
+}
+impl PinChangeRequest {
+    /// The membership owner supplies the actual pending change independently of
+    /// the receipt. The same service enforces its possibly narrower byte limit.
+    pub fn new(change: &Change<'_>, evidence: &[u8]) -> Result<Self> {
+        change_binding(change)?;
+        if evidence.is_empty() || evidence.len() > 16 * 1024 * 1024 {
+            return Err(Error::Invalid);
+        }
+        Ok(Self {
+            community: change.community.into(),
+            member: change.member.into(),
+            field: change.field.into(),
+            expected: change.expected,
+            replacement: change.replacement,
+            evidence: evidence.to_vec(),
+        })
+    }
+    pub(crate) fn verify<V, C>(
+        self,
+        service: &mut cblc::accounting_service::AccountService<V, C>,
+    ) -> std::result::Result<SpentChange, cblc::Error>
+    where
+        V: cblc::accounting::AccountProofVerifier,
+        C: Fn() -> u64,
+    {
+        service
+            .verify_completed_pin_change(
+                &Change {
+                    community: &self.community,
+                    member: &self.member,
+                    field: &self.field,
+                    expected: self.expected,
+                    replacement: self.replacement,
+                },
+                &self.evidence,
+            )
+            .map(|verified| SpentChange { verified })
     }
 }
 

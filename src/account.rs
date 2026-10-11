@@ -26,6 +26,9 @@ where
 {
     fn host(&mut self, request: HostRequest) -> std::result::Result<HostResponse, cblc::Error> {
         match request {
+            HostRequest::VerifyPinChange(request) => {
+                request.verify(self).map(HostResponse::VerifiedPinChange)
+            }
             HostRequest::PublishRecord {
                 revision,
                 policy_epoch,

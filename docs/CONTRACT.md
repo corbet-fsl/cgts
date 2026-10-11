@@ -200,3 +200,11 @@ and awaits `shutdown` on all setup/error paths before runtime teardown; initiati
 or Drop is not a substitute for this mandatory lifetime contract.
 Real SQL lease/cancelled-wait tests and an actual native proof followed by clone
 cancellation are authored; execution remains dependent on the useful native route.
+
+The typed `VerifyPinChange` command runs on that same configured native worker
+and returns only CBLC's sealed completed-spend capability with the retained owner
+lease. Receipt bytes use the original request/acceptance/update fields, bounded
+before decoding and checked by the native owner. This is not current membership
+authority. The legacy standalone synchronous decoder still refuses because it
+has no configured native owner. CMBR must verify current key/lifecycle/legal
+authority under the actual pin transaction before consuming the exact binding.
