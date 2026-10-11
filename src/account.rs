@@ -3,9 +3,13 @@ use crate::{Error, Result};
 use cblc::{accounting::AccountProofVerifier, accounting_service::AccountService};
 use std::sync::mpsc;
 
+mod host;
+pub use host::{HostRequest, HostResponse};
+
 pub use cblc::accounting_service::{AccountServiceRequest, AccountServiceResponse};
 
 trait Service: Send {
+    fn host(&mut self, request: HostRequest) -> std::result::Result<HostResponse, cblc::Error>;
     fn handle(
         &mut self,
         pseudonym: &[u8; 48],
@@ -18,6 +22,46 @@ where
     V: AccountProofVerifier + Send,
     C: Fn() -> u64 + Send,
 {
+    fn host(&mut self, request: HostRequest) -> std::result::Result<HostResponse, cblc::Error> {
+        match request {
+            HostRequest::PublishRecord {
+                revision,
+                policy_epoch,
+                period_seconds,
+            } => {
+                let publication = self.publish_record_epoch(policy_epoch, period_seconds)?;
+                let material = self.public_verifier_material(revision, policy_epoch)?;
+                if material.record_epoch.as_ref() != Some(publication.descriptor()) {
+                    return Err(cblc::Error::PolicyMismatch);
+                }
+                Ok(HostResponse::Record {
+                    publication,
+                    material,
+                })
+            }
+            HostRequest::VerifierMaterial {
+                revision,
+                policy_epoch,
+            } => self
+                .public_verifier_material(revision, policy_epoch)
+                .map(HostResponse::VerifierMaterial),
+            HostRequest::VerifiedCheckpoint { slot, root } => {
+                self.publish_verified_checkpoint(slot, root)?;
+                Ok(HostResponse::Checkpoint)
+            }
+            HostRequest::TuneWaiting {
+                expected_revision,
+                seconds,
+            } => self
+                .tune_waiting_period(expected_revision, seconds)
+                .map(HostResponse::WaitingPeriod),
+            HostRequest::SettleBatch(batch) => {
+                self.deposit_batch(&batch)?;
+                Ok(HostResponse::Settled)
+            }
+        }
+    }
+
     fn handle(
         &mut self,
         pseudonym: &[u8; 48],

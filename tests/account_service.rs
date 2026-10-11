@@ -2,6 +2,8 @@
 //! Status does not invoke ZK verification; the configured native verifier is real.
 //! Requires existing authenticated CBLC_PROOF_DIRECTORY and CBLC_BB fixture inputs.
 mod common;
+#[path = "account_service/host.rs"]
+mod host;
 #[path = "account_service/native.rs"]
 mod native;
 #[path = "account_service/storage.rs"]

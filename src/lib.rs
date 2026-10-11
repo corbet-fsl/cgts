@@ -12,7 +12,7 @@ pub mod payments;
 pub mod pins;
 pub mod storage;
 
-pub use account::{AccountServiceRequest, AccountServiceResponse};
+pub use account::{AccountServiceRequest, AccountServiceResponse, HostRequest, HostResponse};
 /// Canonical Balance configuration and proof types; no second account protocol.
 pub use cblc;
 pub use crbk::{GateLevel, MembershipState, Snapshot};

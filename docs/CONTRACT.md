@@ -165,3 +165,16 @@ checks before forwarding. Publication and settlement are privileged host work,
 not added member request variants. Tests preserve genuine signed Status and
 SQL/lease/race behavior with the maintained native verifier. They require real
 CBLC artifact/worker inputs and are authored, not executed or proof-qualified.
+
+
+Privileged `account_host` commands share that exact worker and return the same
+owned caller guard on success. PublishRecord runs the original epoch publication
+and actual material projection consecutively, crosschecking descriptor identity;
+VerifierMaterial bootstrap keeps an absent record epoch absent and cannot enable
+G2. VerifiedCheckpoint, TuneWaiting and SettleBatch only delegate original native
+owner methods. They have no serde decoder, member DTO or arbitrary callback/key.
+The caller continues actual Policy/Beacon work under the returned guard; cancelled
+calls retain it until native completion. A possibly committed native operation
+followed by any later publication failure requires reconciliation, never a
+replacement ledger or a claim of rollback. Root-board remains its separate
+original CPSD/Policy owner, not an account-worker request.

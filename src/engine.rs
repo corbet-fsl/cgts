@@ -141,6 +141,21 @@ impl<S: Storage, L: LegalVeto> Gatekeeper<S, L> {
             .await
     }
 
+    /// Privileged host command on the same native owner as member accounting.
+    /// Return the actual configuration/Policy guard for publication completion.
+    /// Never decode this command from a member endpoint or accept a clock/key.
+    pub async fn account_host<H: Send + 'static>(
+        &self,
+        request: HostRequest,
+        authority: H,
+    ) -> Result<(HostResponse, H)> {
+        self.accounts
+            .as_ref()
+            .ok_or(Error::Disabled)?
+            .host(request, authority)
+            .await
+    }
+
     /// Only enabled community gates/providers appear in the lobby.
     pub async fn steps(
         &self,
