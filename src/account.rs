@@ -160,6 +160,6 @@ impl Accounts {
 
 impl Drop for Accounts {
     fn drop(&mut self) {
-        self.shutdown.fence();
+        let _ = self.shutdown.begin_shutdown();
     }
 }

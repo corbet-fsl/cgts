@@ -190,9 +190,13 @@ explicit drain-only semantics and does not pretend it can preempt a verifier.
 
 Graceful host drain budgets are separate from mandatory cleanup. Hosts await this
 join before tearing down the CRLT async runtime; operating-system process cleanup
-has no hard real-time promise. Dropping the owner only fences/cancels it and never
-blocks an async reactor or reports joined completion. The host retains a shutdown
-handle before any fallible post-construction await and joins on all setup/error
-paths; Drop is not a substitute for this mandatory lifetime contract.
+has no hard real-time promise. `begin_shutdown` synchronously initiates the same
+shared join attempt without blocking the reactor; it never reports completion.
+This lets a startup guard initiate cleanup even when its factory future is
+abandoned. Dropping the service owner also initiates this attempt. If starting
+the join fails, the original worker remains available for a retained handle to
+retry. The host retains that handle before any fallible post-construction await
+and awaits `shutdown` on all setup/error paths before runtime teardown; initiation
+or Drop is not a substitute for this mandatory lifetime contract.
 Real SQL lease/cancelled-wait tests and an actual native proof followed by clone
 cancellation are authored; execution remains dependent on the useful native route.

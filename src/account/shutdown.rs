@@ -73,17 +73,37 @@ impl AccountShutdown {
             .send(command)
             .map_err(|_| Error::Storage)
     }
-    pub(super) fn fence(&self) {
-        self.0.fence();
+    /// Start the shared join attempt without blocking an async reactor. This
+    /// also fences submissions and cancels actual native proof execution.
+    /// Success reports initiation only: the host must still await `shutdown`
+    /// before runtime teardown. A failed start retains the worker for retry.
+    pub fn begin_shutdown(&self) -> Result<()> {
+        let attempt = self.begin();
+        let completion = *attempt.0.borrow();
+        match completion {
+            Completion::StartFailed | Completion::Joined(false) => Err(Error::Storage),
+            Completion::Pending | Completion::Joined(true) => Ok(()),
+        }
     }
     /// Irreversibly fence submissions, cancel actual native proof execution,
     /// and await service final drop plus its thread join. Caller cancellation
     /// cannot abandon that join; concurrent waiters observe the same outcome.
     /// This is mandatory cleanup, not a hard operating-system time guarantee.
     pub async fn shutdown(&self) -> Result<()> {
+        let attempt = self.begin();
+        let mut completed = attempt.0.subscribe();
+        loop {
+            match *completed.borrow_and_update() {
+                Completion::Joined(true) => return Ok(()),
+                Completion::Joined(false) | Completion::StartFailed => return Err(Error::Storage),
+                Completion::Pending => {}
+            }
+            completed.changed().await.map_err(|_| Error::Storage)?;
+        }
+    }
+    fn begin(&self) -> Arc<Attempt> {
         self.0.fence();
         let (attempt, start) = self.0.attempt();
-        let mut completed = attempt.0.subscribe();
         if start {
             let inner = self.0.clone();
             let finishing = attempt.clone();
@@ -108,14 +128,7 @@ impl AccountShutdown {
                 attempt.0.send_replace(Completion::StartFailed);
             }
         }
-        loop {
-            match *completed.borrow_and_update() {
-                Completion::Joined(true) => return Ok(()),
-                Completion::Joined(false) | Completion::StartFailed => return Err(Error::Storage),
-                Completion::Pending => {}
-            }
-            completed.changed().await.map_err(|_| Error::Storage)?;
-        }
+        attempt
     }
 }
 impl Inner {
