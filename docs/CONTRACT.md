@@ -150,3 +150,18 @@ validity ends. The hosting service owns the final authorization boundary: use it
 trusted current clock, check result expiry and current policy/legal state, and
 re-evaluate when the earlier context is no longer current. Passing an old `now`
 through delayed storage work does not establish completion-time freshness.
+
+
+The original account-service port installs one configured native Balance service
+for this community. `account` first performs the existing legal/context preflight
+and compares the independent Community-owned pseudonym with the exact subject;
+it never creates a gate receipt. A single native worker owns the service and
+its live clock and caller-owned atomic storage. The actual member/Policy lease
+is moved into the queued command and retained through service completion even
+if the asynchronous caller cancels. A panicked worker stays fenced; there is no
+replacement ledger, copied state or automatic retry after an uncertain effect.
+The host must perform the original current policy epoch/cohort/member/device
+checks before forwarding. Publication and settlement are privileged host work,
+not added member request variants. Tests preserve genuine signed Status and
+SQL/lease/race behavior with the maintained native verifier. They require real
+CBLC artifact/worker inputs and are authored, not executed or proof-qualified.

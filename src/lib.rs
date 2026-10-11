@@ -2,6 +2,7 @@
 //! gate metadata and opaque single-use markers. See `docs/CONTRACT.md`.
 #![forbid(unsafe_code)]
 
+mod account;
 mod engine;
 pub mod gates;
 pub mod legal_storage;
@@ -11,6 +12,9 @@ pub mod payments;
 pub mod pins;
 pub mod storage;
 
+pub use account::{AccountServiceRequest, AccountServiceResponse};
+/// Canonical Balance configuration and proof types; no second account protocol.
+pub use cblc;
 pub use crbk::{GateLevel, MembershipState, Snapshot};
 pub use engine::*;
 pub use model::*;
@@ -44,6 +48,9 @@ pub enum Error {
     /// The legal authority service failed; this is never green.
     #[error("legal gate unavailable")]
     Legal,
+    /// The configured Balance owner refused an account operation.
+    #[error("account operation refused")]
+    Account(cblc::Error),
     /// A rulebook policy is malformed.
     #[error("invalid gate policy")]
     Policy,

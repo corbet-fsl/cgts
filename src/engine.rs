@@ -68,6 +68,7 @@ impl<S: clbs::Store + Clone, V: clbs::Verifier + Clone> LegalVeto for LegalGate<
 pub struct Gatekeeper<S, L> {
     store: S,
     legal: L,
+    accounts: Option<crate::account::Accounts>,
 }
 
 impl<S: Storage, L: LegalVeto> Gatekeeper<S, L> {
@@ -77,12 +78,67 @@ impl<S: Storage, L: LegalVeto> Gatekeeper<S, L> {
         if store.community() != legal.community() {
             return Err(Error::Scope);
         }
-        Ok(Self { store, legal })
+        Ok(Self {
+            store,
+            legal,
+            accounts: None,
+        })
     }
 
     /// Immutable community shared by this gatekeeper's storage and legal veto.
     pub fn community(&self) -> &str {
         self.store.community()
+    }
+
+    /// Install exactly one original Balance service for this community. Its
+    /// ledger must use the host's community-scoped atomic store and retain a live clock.
+    pub async fn with_account_service<V, C>(
+        mut self,
+        service: cblc::accounting_service::AccountService<V, C>,
+    ) -> Result<Self>
+    where
+        V: cblc::accounting::AccountProofVerifier + Send + 'static,
+        C: Fn() -> u64 + Send + 'static,
+    {
+        let community = self.community().to_owned();
+        let configured = self.accounts.is_some();
+        // Even a refused original service must drop its native store outside
+        // the async executor; that store owns a blocking runtime.
+        self.accounts = Some(
+            tokio::task::spawn_blocking(move || {
+                if service.community() != community {
+                    return Err(Error::Scope);
+                }
+                if configured {
+                    return Err(Error::Invalid);
+                }
+                crate::account::Accounts::new(service)
+            })
+            .await
+            .map_err(|_| Error::Storage)??,
+        );
+        Ok(self)
+    }
+
+    /// Forward canonical account input under the caller's actual member/policy
+    /// leases. Pseudonym and leases come from Community, never the request body.
+    /// This does not create a gate result or activate record/punishment gates.
+    pub async fn account<H: Send + 'static>(
+        &self,
+        context: Context<'_>,
+        pseudonym: cpsd::Pseudonym,
+        request: AccountServiceRequest,
+        authority: H,
+    ) -> Result<AccountServiceResponse> {
+        self.preflight(context).await?;
+        if context.subject != pseudonym.to_hex() {
+            return Err(Error::Scope);
+        }
+        self.accounts
+            .as_ref()
+            .ok_or(Error::Disabled)?
+            .handle(pseudonym.to_bytes(), request, authority)
+            .await
     }
 
     /// Only enabled community gates/providers appear in the lobby.
