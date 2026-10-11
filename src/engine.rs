@@ -150,6 +150,94 @@ impl<S: Storage, L: LegalVeto> Gatekeeper<S, L> {
         Ok(self)
     }
 
+    /// Configure the actual common publisher and ledger on one command worker.
+    /// Both stores and clocks are supplied by the trusted host; no second ledger
+    /// or detached publisher thread is created.
+    pub async fn with_account_enrollment<V, C, E>(
+        mut self,
+        service: cblc::accounting_service::AccountService<V, C>,
+        enrollment: cblc::enrollment::EnrollmentService<E>,
+    ) -> Result<Self>
+    where
+        V: cblc::accounting::AccountProofVerifier + Send + 'static,
+        C: Fn() -> u64 + Send + 'static,
+        E: Fn() -> u64 + Send + 'static,
+    {
+        let community = self.community().to_owned();
+        let configured = self.accounts.is_some();
+        self.accounts = Some(
+            tokio::task::spawn_blocking(move || {
+                if service.community() != community
+                    || enrollment.configuration().community_id != community
+                {
+                    return Err(Error::Scope);
+                }
+                if configured {
+                    return Err(Error::Invalid);
+                }
+                crate::account::Accounts::with_enrollment(service, enrollment)
+            })
+            .await
+            .map_err(|_| Error::Storage)??,
+        );
+        Ok(self)
+    }
+
+    /// The same combined worker with the native ledger's exact cancellation
+    /// handle and mandatory join. Enrollment cannot bypass its shutdown fence.
+    pub async fn with_native_account_enrollment<C, E>(
+        mut self,
+        service: cblc::accounting_service::AccountService<
+            cblc::accounting_service::NativeAccountVerifier,
+            C,
+        >,
+        enrollment: cblc::enrollment::EnrollmentService<E>,
+    ) -> Result<Self>
+    where
+        C: Fn() -> u64 + Send + 'static,
+        E: Fn() -> u64 + Send + 'static,
+    {
+        let community = self.community().to_owned();
+        let configured = self.accounts.is_some();
+        self.accounts = Some(
+            tokio::task::spawn_blocking(move || {
+                if service.community() != community
+                    || enrollment.configuration().community_id != community
+                {
+                    return Err(Error::Scope);
+                }
+                if configured {
+                    return Err(Error::Invalid);
+                }
+                crate::account::Accounts::native_with_enrollment(service, enrollment)
+            })
+            .await
+            .map_err(|_| Error::Storage)??,
+        );
+        Ok(self)
+    }
+
+    /// Enroll only the actual authenticated member under the same held current
+    /// owner expectations. The delegation supplies neither subject nor root.
+    pub async fn enroll_account(
+        &self,
+        context: Context<'_>,
+        pseudonym: cpsd::Pseudonym,
+        delegation: cblc::enrollment::AccountingDelegation,
+        expected: crate::EnrollmentExpected,
+        authority: std::sync::Arc<dyn cblc::storage::CommitAuthority>,
+    ) -> Result<cblc::enrollment::EnrollmentEntry> {
+        self.preflight(context).await?;
+        if context.subject != pseudonym.to_hex() {
+            return Err(Error::Scope);
+        }
+        self.accounts
+            .as_ref()
+            .ok_or(Error::Disabled)?
+            .enroll(pseudonym.to_bytes(), delegation, expected, authority)
+            .await
+    }
+
     /// Retain outside every owner lease/lock, then join before host storage and
     /// async runtime teardown. This cannot authorize or reset member work.
     pub fn account_shutdown(&self) -> Result<crate::account::AccountShutdown> {

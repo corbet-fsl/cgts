@@ -13,7 +13,8 @@ pub mod pins;
 pub mod storage;
 
 pub use account::{
-    AccountServiceRequest, AccountServiceResponse, AccountShutdown, HostRequest, HostResponse,
+    AccountServiceRequest, AccountServiceResponse, AccountShutdown, EnrollmentExpected,
+    HostRequest, HostResponse,
 };
 /// Canonical Balance configuration and proof types; no second account protocol.
 pub use cblc;

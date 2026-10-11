@@ -4,6 +4,25 @@ use super::*;
 /// Host configuration and settlement only; no deserializer or signing callback.
 /// The host independently authenticates common roots, operators and input batches.
 pub enum HostRequest {
+    /// Freeze the original common roster under independently current Policy.
+    PrepareCheckpoint {
+        /// Held Policy expectations, never member-provided authority.
+        expected: EnrollmentExpected,
+        /// Same source owner retained through the actual prepare writer.
+        authority: Arc<dyn cblc::storage::CommitAuthority>,
+    },
+    /// Consume only the actual common producer's nonconstructible capability.
+    InstallCheckpoint {
+        /// Exact retained signed publication and original source guard.
+        pending: cblc::enrollment::PendingCheckpoint,
+        /// Independently current target owner, checked at the ledger writer.
+        authority: Arc<dyn cblc::storage::CommitAuthority>,
+    },
+    /// Acknowledge only the real native installation receipt. This does not
+    /// renew target authority or the original frozen publication interval.
+    AcknowledgeCheckpoint(cblc::enrollment::InstalledCheckpoint),
+    /// Read installed historical bytes; no current authority is conferred.
+    EnrollmentCheckpoint { slot: u64 },
     /// Catch up only through original live signed predecessor transitions.
     ReconcileAdmissionKeys(cblc::accounting_ledger::AdmissionKeyReconciliation),
     /// Reverify an exact completed pin spend under the original native owner.
@@ -35,6 +54,12 @@ pub enum HostRequest {
 /// Data from the same native owner. Publication data becomes authenticated only
 /// after the actual caller Policy signer and Beacon publish it under their lease.
 pub enum HostResponse {
+    /// Original prepared producer capability, retaining its source authority.
+    PendingCheckpoint(cblc::enrollment::PendingCheckpoint),
+    /// Historical native installation receipt, retaining source authority only.
+    InstalledCheckpoint(cblc::enrollment::InstalledCheckpoint),
+    /// Exact installed public data, with no guard or install capability.
+    EnrollmentCheckpoint(Option<cblc::enrollment::EnrollmentPublication>),
     /// Exact durable installed original ring and transition revision.
     AdmissionKeys(cblc::accounting_ledger::AdmissionKeyState),
     /// Native completed-spend capability, with no current member authority.

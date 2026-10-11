@@ -5,12 +5,23 @@ use std::sync::{Arc, mpsc};
 
 mod host;
 pub use host::{HostRequest, HostResponse};
+mod enrollment;
+pub use enrollment::EnrollmentExpected;
 mod shutdown;
 pub use shutdown::AccountShutdown;
 
 pub use cblc::accounting_service::{AccountServiceRequest, AccountServiceResponse};
 
 trait Service: Send {
+    fn enroll(
+        &mut self,
+        _pseudonym: &[u8; 48],
+        _delegation: cblc::enrollment::AccountingDelegation,
+        _expected: EnrollmentExpected,
+        _authority: Arc<dyn cblc::storage::CommitAuthority>,
+    ) -> std::result::Result<cblc::enrollment::EnrollmentEntry, cblc::Error> {
+        Err(cblc::Error::UnsupportedCapability)
+    }
     fn host(&mut self, request: HostRequest) -> std::result::Result<HostResponse, cblc::Error>;
     fn handle(
         &mut self,
@@ -73,6 +84,10 @@ where
                 self.deposit_batch(&batch)?;
                 Ok(HostResponse::Settled)
             }
+            HostRequest::PrepareCheckpoint { .. }
+            | HostRequest::InstallCheckpoint { .. }
+            | HostRequest::AcknowledgeCheckpoint(_)
+            | HostRequest::EnrollmentCheckpoint { .. } => Err(cblc::Error::UnsupportedCapability),
         }
     }
 
@@ -118,13 +133,12 @@ impl Accounts {
         Self::start(service, Some(cancellation))
     }
 
-    fn start<V, C>(
-        mut service: AccountService<V, C>,
+    fn start<S>(
+        mut service: S,
         cancellation: Option<cblc::accounting_service::NativeAccountCancellation>,
     ) -> Result<Self>
     where
-        V: AccountProofVerifier + Send + 'static,
-        C: Fn() -> u64 + Send + 'static,
+        S: Service + 'static,
     {
         let (sender, receiver) = mpsc::channel::<Command>();
         let state = Arc::new(shutdown::State::default());
