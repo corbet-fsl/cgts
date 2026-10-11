@@ -1,6 +1,8 @@
 //! Real signed status operations through the original Balance service and SQL.
 //! Status does not invoke ZK verification; the configured native verifier is real.
 //! Requires existing authenticated CBLC_PROOF_DIRECTORY and CBLC_BB fixture inputs.
+#[path = "account_service/authority.rs"]
+mod authority;
 mod common;
 #[path = "account_service/host.rs"]
 mod host;

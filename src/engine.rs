@@ -177,6 +177,26 @@ impl<S: Storage, L: LegalVeto> Gatekeeper<S, L> {
             .await
     }
 
+    /// Forward through the actual native writer's authority hook. Community
+    /// constructs the sealed owner composition; member input cannot select it.
+    pub async fn account_authorized(
+        &self,
+        context: Context<'_>,
+        pseudonym: cpsd::Pseudonym,
+        request: AccountServiceRequest,
+        authority: std::sync::Arc<dyn cblc::storage::CommitAuthority>,
+    ) -> Result<AccountServiceResponse> {
+        self.preflight(context).await?;
+        if context.subject != pseudonym.to_hex() {
+            return Err(Error::Scope);
+        }
+        self.accounts
+            .as_ref()
+            .ok_or(Error::Disabled)?
+            .handle_authorized(pseudonym.to_bytes(), request, authority)
+            .await
+    }
+
     /// Privileged host command on the same native owner as member accounting.
     /// Return the actual configuration/Policy guard for publication completion.
     /// Never decode this command from a member endpoint or accept a clock/key.

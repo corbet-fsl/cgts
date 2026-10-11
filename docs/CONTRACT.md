@@ -208,3 +208,10 @@ before decoding and checked by the native owner. This is not current membership
 authority. The legacy standalone synchronous decoder still refuses because it
 has no configured native owner. CMBR must verify current key/lifecycle/legal
 authority under the actual pin transaction before consuming the exact binding.
+
+The configured Community account path uses `account_authorized`. Its original
+single worker retains the actual owner callback and leases until the native
+command finishes, including after caller cancellation. Balance invokes the
+callback at its existing writer-held commit decision; the queue does not mint
+member authority or replace proof verification. The generic lower-owner account
+method remains available for compositions which do not claim Community authority.

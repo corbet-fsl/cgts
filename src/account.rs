@@ -17,6 +17,12 @@ trait Service: Send {
         pseudonym: &[u8; 48],
         request: AccountServiceRequest,
     ) -> std::result::Result<AccountServiceResponse, cblc::Error>;
+    fn handle_authorized(
+        &mut self,
+        pseudonym: &[u8; 48],
+        request: AccountServiceRequest,
+        authority: Arc<dyn cblc::storage::CommitAuthority>,
+    ) -> std::result::Result<AccountServiceResponse, cblc::Error>;
 }
 
 impl<V, C> Service for AccountService<V, C>
@@ -77,6 +83,14 @@ where
     ) -> std::result::Result<AccountServiceResponse, cblc::Error> {
         self.handle_for_member(pseudonym, request)
     }
+    fn handle_authorized(
+        &mut self,
+        pseudonym: &[u8; 48],
+        request: AccountServiceRequest,
+        authority: Arc<dyn cblc::storage::CommitAuthority>,
+    ) -> std::result::Result<AccountServiceResponse, cblc::Error> {
+        self.handle_for_member_authorized(pseudonym, request, authority)
+    }
 }
 
 type Command = Box<dyn FnOnce(&mut dyn Service) + Send>;
@@ -132,6 +146,34 @@ impl Accounts {
 
     pub(crate) fn shutdown(&self) -> AccountShutdown {
         self.shutdown.clone()
+    }
+
+    pub(crate) async fn handle_authorized(
+        &self,
+        pseudonym: [u8; 48],
+        request: AccountServiceRequest,
+        authority: Arc<dyn cblc::storage::CommitAuthority>,
+    ) -> Result<AccountServiceResponse> {
+        let (reply, response) = tokio::sync::oneshot::channel();
+        let state = self.shutdown.state();
+        self.shutdown.send(Box::new(move |service| {
+            // The actual owner capability and its leases stay on this single
+            // worker through cancellation, proof work and final commitment.
+            let result = if state.closed() {
+                Err(Error::Storage)
+            } else {
+                service
+                    .handle_authorized(&pseudonym, request, authority)
+                    .map_err(Error::Account)
+            };
+            let result = if state.closed() {
+                Err(Error::Storage)
+            } else {
+                result
+            };
+            let _ = reply.send(result);
+        }))?;
+        response.await.map_err(|_| Error::Storage)?
     }
 
     pub(crate) async fn handle<H: Send + 'static>(
