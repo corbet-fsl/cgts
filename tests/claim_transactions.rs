@@ -35,6 +35,9 @@ async fn caller_commits_original_claims_together_and_reopen_keeps_them_spent() {
     ))
     .await
     .unwrap();
+    db.migrate(&[crlt::Migration::new(1, "gates", cgts::SCHEMA)])
+        .await
+        .unwrap();
     let store = LibsqlStore::new(&db, "community-a").unwrap();
     for value in [1, 2] {
         assert_eq!(
