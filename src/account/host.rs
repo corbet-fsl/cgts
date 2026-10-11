@@ -4,6 +4,22 @@ use super::*;
 /// Host configuration and settlement only; no deserializer or signing callback.
 /// The host independently authenticates common roots, operators and input batches.
 pub enum HostRequest {
+    /// Reconcile the actual daily owner under a retained current host guard.
+    ReconcileSettlement {
+        /// Current authenticated configuration and dedicated public epoch.
+        config: cblc::settlement::SettlementConfig,
+        /// Actual provisioned maintained issuer, never raw key bytes.
+        issuer: cblc::settlement::SettlementIssuer,
+        /// Exact configured owner incarnation.
+        incarnation: String,
+        /// Current Policy's next publication revision.
+        revision: u64,
+        /// Actual Policy/host currentness at the original atomic writer.
+        authority: Arc<dyn cblc::storage::CommitAuthority>,
+    },
+    /// Stage only actual native proof and dedicated-token authenticated facts.
+    /// No member session or submitted eligibility replaces either owner.
+    StageSettlement(cblc::settlement::SettlementSubmission),
     /// Freeze the original common roster under independently current Policy.
     PrepareCheckpoint {
         /// Held Policy expectations, never member-provided authority.
@@ -54,6 +70,8 @@ pub enum HostRequest {
 /// Data from the same native owner. Publication data becomes authenticated only
 /// after the actual caller Policy signer and Beacon publish it under their lease.
 pub enum HostResponse {
+    /// Actual anonymous staging result from the configured native owner.
+    Settlement(cblc::settlement::SettlementStatus),
     /// Original prepared producer capability, retaining its source authority.
     PendingCheckpoint(cblc::enrollment::PendingCheckpoint),
     /// Historical native installation receipt, retaining source authority only.

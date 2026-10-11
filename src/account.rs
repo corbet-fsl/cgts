@@ -7,6 +7,7 @@ mod host;
 pub use host::{HostRequest, HostResponse};
 mod enrollment;
 pub use enrollment::EnrollmentExpected;
+mod settlement;
 mod shutdown;
 pub use shutdown::AccountShutdown;
 
@@ -43,6 +44,14 @@ where
 {
     fn host(&mut self, request: HostRequest) -> std::result::Result<HostResponse, cblc::Error> {
         match request {
+            HostRequest::ReconcileSettlement {
+                config,
+                issuer,
+                incarnation,
+                revision,
+                authority,
+            } => settlement::reconcile(self, config, issuer, incarnation, revision, authority),
+            HostRequest::StageSettlement(submission) => settlement::stage(self, submission),
             HostRequest::ReconcileAdmissionKeys(request) => self
                 .reconcile_admission_keys(request)
                 .map(HostResponse::AdmissionKeys),
