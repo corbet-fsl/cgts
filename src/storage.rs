@@ -1,4 +1,5 @@
 //! Current gate facts and unlinkable spent markers, through crlt only.
+mod claims;
 use crate::*;
 use crlt::params;
 use std::{
@@ -203,15 +204,7 @@ impl Storage for LibsqlStore {
         }
         let mut tx = self.db.tx().await?;
         if let Some(claim) = claim {
-            if !tx
-                .query(CLAIM, params![claim.domain.clone(), claim.marker.clone()])
-                .await?
-                .is_empty()
-            {
-                return Err(Error::Refused);
-            }
-            tx.execute(SPEND, params![claim.domain.clone(), claim.marker.clone()])
-                .await?;
+            claims::stage_claim(&mut tx, claim).await?;
         }
         if let Some(result) = result {
             tx.execute(

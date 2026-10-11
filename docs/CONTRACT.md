@@ -215,3 +215,11 @@ command finishes, including after caller cancellation. Balance invokes the
 callback at its existing writer-held commit decision; the queue does not mint
 member authority or replace proof verification. The generic lower-owner account
 method remains available for compositions which do not claim Community authority.
+
+The libSQL spent-marker owner can stage an original verified claim through
+`claim_in_transaction` in a caller-owned admission transaction. It requires the
+exact same database handle and community, opens no second writer, and never
+commits. It consumes the transaction and returns ownership only on success;
+refusal or cancellation therefore rolls back earlier staged lifecycle work.
+The caller still verifies the leaf evidence and commits all admission/creation
+state together. Staging a nullifier is neither membership nor a durable receipt.
