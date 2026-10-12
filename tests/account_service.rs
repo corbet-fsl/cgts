@@ -223,9 +223,7 @@ async fn original_signed_status_and_live_clock_are_preserved() {
         grant.pseudonym = other.grant.pseudonym;
     }
     assert!(matches!(
-        keeper
-            .account(ctx, member.pseudonym, wrong, ())
-            .await,
+        keeper.account(ctx, member.pseudonym, wrong, ()).await,
         Err(Error::Account(cblc::Error::Admission))
     ));
     clock.store(1200, Ordering::SeqCst);
