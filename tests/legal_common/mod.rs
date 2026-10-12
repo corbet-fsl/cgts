@@ -95,12 +95,12 @@ pub fn sign(order: Order) -> SignedOrder {
 pub async fn open(path: &std::path::Path) -> Db {
     let url = format!("file://{}", path.display());
     let db = Db::open(Config::new(url, "")).await.unwrap();
-    assert_eq!(
-        db.migrate(&[Migration::new(1, "clbs", SCHEMA)])
-            .await
-            .unwrap(),
-        1
-    );
+    // The migration is idempotent: it applies on a fresh database and is a no-op on reopening.
+    let applied = db
+        .migrate(&[Migration::new(1, "clbs", SCHEMA)])
+        .await
+        .unwrap();
+    assert!(applied <= 1);
     db
 }
 

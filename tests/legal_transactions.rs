@@ -62,6 +62,16 @@ async fn verified_order_and_notice_commit_once_and_survive_reopening() {
     ))
     .await
     .unwrap();
+    // Reopening applies the same migrations again; nothing is pending.
+    assert_eq!(
+        db.migrate(&[
+            crlt::Migration::new(1, "legal", SCHEMA),
+            crlt::Migration::new(2, "notice", NOTICE_SCHEMA),
+        ])
+        .await
+        .unwrap(),
+        0
+    );
     let store = LibsqlStore::new(&db, "community-a").unwrap();
     assert_eq!(store.record("atomic").await.unwrap(), Some(record));
     let rows = db
