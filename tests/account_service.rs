@@ -196,7 +196,7 @@ async fn original_signed_status_and_live_clock_are_preserved() {
         .await
         .unwrap();
     let answer = keeper
-        .account(ctx, member.pseudonym.clone(), member.wire(), ())
+        .account(ctx, member.pseudonym, member.wire(), ())
         .await
         .unwrap();
     let AccountServiceResponse::Status(answer) = answer else {
@@ -224,14 +224,14 @@ async fn original_signed_status_and_live_clock_are_preserved() {
     }
     assert!(matches!(
         keeper
-            .account(ctx, member.pseudonym.clone(), wrong, ())
+            .account(ctx, member.pseudonym, wrong, ())
             .await,
         Err(Error::Account(cblc::Error::Admission))
     ));
     clock.store(1200, Ordering::SeqCst);
     assert!(matches!(
         keeper
-            .account(ctx, member.pseudonym.clone(), member.wire(), ())
+            .account(ctx, member.pseudonym, member.wire(), ())
             .await,
         Err(Error::Account(_))
     ));
@@ -271,7 +271,7 @@ async fn cancellation_keeps_the_actual_lease_until_service_completion() {
                     subject: &subject,
                     ..context(&settings)
                 },
-                member.pseudonym.clone(),
+                member.pseudonym,
                 member.wire(),
                 lease,
             )
@@ -301,7 +301,7 @@ async fn a_panicked_service_remains_fenced_and_unconfigured_services_refuse() {
     };
     assert!(matches!(
         memory("garden")
-            .account(ctx, member.pseudonym.clone(), member.wire(), ())
+            .account(ctx, member.pseudonym, member.wire(), ())
             .await,
         Err(Error::Disabled)
     ));
@@ -317,7 +317,7 @@ async fn a_panicked_service_remains_fenced_and_unconfigured_services_refuse() {
     for _ in 0..2 {
         assert!(matches!(
             keeper
-                .account(ctx, member.pseudonym.clone(), member.wire(), ())
+                .account(ctx, member.pseudonym, member.wire(), ())
                 .await,
             Err(Error::Storage)
         ));

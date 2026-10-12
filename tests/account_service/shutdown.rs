@@ -95,7 +95,7 @@ async fn cancelled_shutdown_waiters_still_join_the_same_worker_before_releasing_
                     subject: &subject,
                     ..context(&snapshot)
                 },
-                member.pseudonym.clone(),
+                member.pseudonym,
                 member.wire(),
                 lease,
             )

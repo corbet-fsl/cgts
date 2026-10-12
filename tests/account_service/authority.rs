@@ -36,7 +36,7 @@ async fn member_queue_reaches_actual_final_authority_before_signed_status_releas
     });
     assert!(matches!(
         keeper
-            .account_authorized(ctx, member.pseudonym.clone(), member.wire(), owner)
+            .account_authorized(ctx, member.pseudonym, member.wire(), owner)
             .await,
         Err(Error::Account(cblc::Error::Admission))
     ));
@@ -46,7 +46,7 @@ async fn member_queue_reaches_actual_final_authority_before_signed_status_releas
     // The independently signed original request and native service are valid;
     // the refusal above comes from the required member authority at its cut.
     let response = keeper
-        .account(ctx, member.pseudonym.clone(), member.wire(), ())
+        .account(ctx, member.pseudonym, member.wire(), ())
         .await
         .unwrap();
     let AccountServiceResponse::Status(status) = response else {
@@ -99,7 +99,7 @@ async fn cancelled_member_caller_cannot_drop_queued_owner_before_actual_service_
                     subject: &subject,
                     ..context(&settings)
                 },
-                member.pseudonym.clone(),
+                member.pseudonym,
                 member.wire(),
                 owner,
             )

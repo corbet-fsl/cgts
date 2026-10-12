@@ -37,7 +37,7 @@ async fn host_tuning_returns_the_same_lease_and_member_work_sees_the_same_owner(
                 subject: &subject,
                 ..context(&settings)
             },
-            member.pseudonym.clone(),
+            member.pseudonym,
             member.wire(),
             (),
         )
