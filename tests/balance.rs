@@ -241,7 +241,15 @@ async fn record_gate_refuses_without_the_complete_extension_relation() {
             cblc::admission::AdmissionTrust {
                 community_id: "garden".into(),
                 policy_digest: B64.encode(&[1; 32]),
-                issuer_public_key: SigningKey::from_bytes(&[10; 32]).verifying_key().to_bytes(),
+                policy_keys: csgn::Signer::new(
+                    "garden",
+                    csgn::SecretKey::from_seed(&mut [10; 32]),
+                    0,
+                    100_000,
+                )
+                .unwrap()
+                .key_ring()
+                .clone(),
             },
             AccountLedgerPolicy {
                 account: spend().request.statement.policy,

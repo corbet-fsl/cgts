@@ -39,7 +39,7 @@ async fn native_shutdown_reaches_the_actual_verifier_clones_after_a_genuine_proo
             },
             configured,
             verifier,
-            SigningKey::from_bytes(&[9; 32]),
+            ed25519_dalek_v2::SigningKey::from_bytes(&[9; 32]),
         )
         .unwrap();
         AccountService::new(ledger, || 1100, cblc::extensions::EXTENSION_PROOF_BYTES).unwrap()

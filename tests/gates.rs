@@ -331,7 +331,6 @@ async fn real_legal_order_cannot_be_bypassed_by_switch_or_empty_policy() {
     let legal = clbs::Gate::new(
         cgts::legal_storage::LibsqlStore::new(&db, "garden").unwrap(),
         Authority,
-        Clock,
     );
     let mut snapshot = snapshot("garden", "cvch");
     snapshot.content.insert(
