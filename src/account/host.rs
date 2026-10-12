@@ -38,7 +38,10 @@ pub enum HostRequest {
     /// renew target authority or the original frozen publication interval.
     AcknowledgeCheckpoint(cblc::enrollment::InstalledCheckpoint),
     /// Read installed historical bytes; no current authority is conferred.
-    EnrollmentCheckpoint { slot: u64 },
+    EnrollmentCheckpoint {
+        /// Installed checkpoint slot to read.
+        slot: u64,
+    },
     /// Catch up only through original live signed predecessor transitions.
     ReconcileAdmissionKeys(cblc::accounting_ledger::AdmissionKeyReconciliation),
     /// Reverify an exact completed pin spend under the original native owner.
@@ -53,9 +56,19 @@ pub enum HostRequest {
         period_seconds: u64,
     },
     /// Bootstrap actual owner material; absent record epoch remains explicitly absent.
-    VerifierMaterial { revision: u64, policy_epoch: u64 },
+    VerifierMaterial {
+        /// Current Policy-supplied publication counter.
+        revision: u64,
+        /// Current authenticated community policy epoch.
+        policy_epoch: u64,
+    },
     /// Install an independently verified common enrollment checkpoint.
-    VerifiedCheckpoint { slot: u64, root: [u8; 32] },
+    VerifiedCheckpoint {
+        /// Checkpoint slot being installed.
+        slot: u64,
+        /// Verified checkpoint root.
+        root: [u8; 32],
+    },
     /// Update only the original host-authorized waiting-period setting.
     TuneWaiting {
         /// Exact previously observed tuning revision.
@@ -69,6 +82,7 @@ pub enum HostRequest {
 
 /// Data from the same native owner. Publication data becomes authenticated only
 /// after the actual caller Policy signer and Beacon publish it under their lease.
+#[allow(clippy::large_enum_variant)] // one short-lived reply per request; boxing adds nothing
 pub enum HostResponse {
     /// Actual anonymous staging result from the configured native owner.
     Settlement(cblc::settlement::SettlementStatus),

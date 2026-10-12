@@ -137,10 +137,10 @@ impl Inner {
             .join
             .lock()
             .unwrap_or_else(|poison| poison.into_inner());
-        if let Some(attempt) = &join.attempt {
-            if *attempt.0.borrow() != Completion::StartFailed {
-                return (attempt.clone(), false);
-            }
+        if let Some(attempt) = &join.attempt
+            && *attempt.0.borrow() != Completion::StartFailed
+        {
+            return (attempt.clone(), false);
         }
         let (completed, _) = tokio::sync::watch::channel(Completion::Pending);
         let attempt = Arc::new(Attempt(completed));
