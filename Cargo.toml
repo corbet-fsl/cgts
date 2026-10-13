@@ -16,7 +16,7 @@ crlt = { git = "https://git.corbet.ch/corbet-foss/crlt.git", branch = "v01" }
 crbk = { git = "https://git.corbet.ch/corbet-foss/crbk.git", branch = "v01" }
 clbs = { git = "https://git.corbet.ch/corbet-foss/clbs.git", branch = "v01" }
 cgrd = { git = "https://git.corbet.ch/corbet-foss/cgrd.git", branch = "v01", default-features = false }
-cvch = { git = "https://git.corbet.ch/corbet-foss/cvch.git", branch = "v01" }
+cvch = { git = "https://git.corbet.ch/corbet-foss/cvch.git", branch = "vouchers-v01" }
 cblc = { git = "https://git.corbet.ch/corbet-libs/cblc.git", branch = "v01" }
 cpsd = { git = "https://git.corbet.ch/corbet-foss/cpsd.git", branch = "v01" }
 rand = "0.8"

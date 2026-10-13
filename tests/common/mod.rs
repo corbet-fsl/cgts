@@ -38,20 +38,79 @@ pub fn context(snapshot: &Snapshot) -> Context<'_> {
         now: 1100,
     }
 }
-pub fn voucher(community: &str, id: &str, expiry: u64) -> cvch::Voucher {
-    let binding = cvch::member_binding(&cvch::receipt_id(id), b"alice");
-    cvch::Voucher {
-        member_binding: binding.clone(),
-        id: id.into(),
-        valid_until: expiry,
-        signature: SigningKey::from_bytes(&[7; 32])
-            .sign(&cvch::issuance_bytes(id, expiry, community, &binding))
-            .to_bytes()
-            .to_vec(),
+/// One shared link store and allowance per test binary; every test thread
+/// derives its own tokens, so tests never see each other's links.
+pub type TestGate = gates::VoucherGate<cvch::link::MemoryLinks, cvch::link::MemoryAllowance>;
+
+pub fn links() -> &'static std::sync::Arc<cvch::link::MemoryLinks> {
+    static LINKS: std::sync::OnceLock<std::sync::Arc<cvch::link::MemoryLinks>> =
+        std::sync::OnceLock::new();
+    LINKS.get_or_init(Default::default)
+}
+
+pub fn allowance() -> &'static std::sync::Arc<cvch::link::MemoryAllowance> {
+    static ALLOWANCE: std::sync::OnceLock<std::sync::Arc<cvch::link::MemoryAllowance>> =
+        std::sync::OnceLock::new();
+    ALLOWANCE.get_or_init(|| {
+        let allowance = cvch::link::MemoryAllowance::default();
+        allowance.grant("sponsor", u32::MAX);
+        std::sync::Arc::new(allowance)
+    })
+}
+
+pub fn block_on<F: std::future::Future>(future: F) -> F::Output {
+    let mut future = std::pin::pin!(future);
+    let mut context = std::task::Context::from_waker(std::task::Waker::noop());
+    loop {
+        if let std::task::Poll::Ready(value) = future.as_mut().poll(&mut context) {
+            return value;
+        }
     }
 }
-pub fn gate() -> gates::VoucherGate {
-    gates::VoucherGate::new("local", SigningKey::from_bytes(&[7; 32]).verifying_key()).unwrap()
+
+/// The request for a single-use link in `community`, valid until `expiry`
+/// (clamped to the library's longest lifetime). The same arguments on the same
+/// test thread give the same link.
+pub fn voucher(community: &str, id: &str, expiry: u64) -> cvch::link::Request {
+    use sha2::Digest;
+    let seed = sha2::Sha256::digest(
+        format!("{:?}\n{community}\n{id}", std::thread::current().id()).as_bytes(),
+    );
+    let token = cvch::link::Token::from_entropy(seed.into()).unwrap();
+    let valid_for = expiry
+        .saturating_sub(1000)
+        .clamp(1, cvch::link::MAXIMUM_DURATION);
+    let options = cvch::link::Options::new(1, valid_for, None, false).unwrap();
+    let link = cvch::link::Link::issue(&token, community, "sponsor", options, 1000).unwrap();
+    // A repeated call finds the link already stored.
+    let _ = block_on(cvch::link::LinkStore::insert(&**links(), link));
+    cvch::link::Request::new(&token, &[3; cvch::link::NONCE_BYTES])
+}
+
+/// A multi-use link with the default sign-off, and its id.
+pub fn signoff_voucher(community: &str, id: &str) -> (cvch::link::Request, cvch::link::LinkId) {
+    use sha2::Digest;
+    let seed = sha2::Sha256::digest(
+        format!("multi {:?}\n{community}\n{id}", std::thread::current().id()).as_bytes(),
+    );
+    let token = cvch::link::Token::from_entropy(seed.into()).unwrap();
+    let options = cvch::link::Options::new(2, 100_000, None, false).unwrap();
+    let link = cvch::link::Link::issue(&token, community, "sponsor", options, 1000).unwrap();
+    let _ = block_on(cvch::link::LinkStore::insert(&**links(), link));
+    (
+        cvch::link::Request::new(&token, &[4; cvch::link::NONCE_BYTES]),
+        token.id(),
+    )
+}
+
+pub fn gate() -> TestGate {
+    gates::VoucherGate::new(
+        "local",
+        links().clone(),
+        allowance().clone(),
+        std::sync::Arc::new(|issuer| Some(format!("@{issuer}"))),
+    )
+    .unwrap()
 }
 
 // A real signature/authority test adapter, not a legal qualification claim.

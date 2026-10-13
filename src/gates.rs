@@ -14,50 +14,51 @@ fn description(gate: &str, provider: &str, text: &str, input: &str) -> Descripto
     }
 }
 
-/// Voucher gate with a server-authorized sponsor verification key. Never accept
-/// this configuration from the redeeming member; the provider names the voucher
-/// service, not the sponsor. No key or voucher is stored by cgts.
-pub struct VoucherGate {
+/// Resolves the issuer's community handle for the record kept at admission,
+/// or `None` when the visibility setting is off. Called with the issuer's member id.
+pub type SponsorLabel = dyn Fn(&str) -> Option<String> + Send + Sync;
+
+/// Voucher gate over cvch links. The service owns the link store and the
+/// allowance port; the redeeming member supplies only the link request. A
+/// link that waits for the issuer's sign-off is [`Error::Pending`]: the member
+/// presents the same link again to learn the decision.
+pub struct VoucherGate<S, A> {
     provider: String,
-    sponsor: ed25519_dalek::VerifyingKey,
+    links: std::sync::Arc<S>,
+    allowance: std::sync::Arc<A>,
+    label: std::sync::Arc<SponsorLabel>,
 }
 
-impl VoucherGate {
-    /// The service checks sponsorship authority before choosing this key.
-    /// Accepts the trusted 32-byte Ed25519 public key or a maintained key type
-    /// exposing those bytes, independently of its library version.
-    pub fn new(provider: impl Into<String>, sponsor: impl AsRef<[u8]>) -> Result<Self> {
+impl<S, A> VoucherGate<S, A> {
+    /// The provider names the voucher service; links come from trusted storage.
+    pub fn new(
+        provider: impl Into<String>,
+        links: std::sync::Arc<S>,
+        allowance: std::sync::Arc<A>,
+        label: std::sync::Arc<SponsorLabel>,
+    ) -> Result<Self> {
         let provider = provider.into();
         component(&provider)?;
-        let bytes = sponsor.as_ref().try_into().map_err(|_| Error::Invalid)?;
-        let sponsor = ed25519_dalek::VerifyingKey::from_bytes(bytes).map_err(|_| Error::Invalid)?;
-        Ok(Self { provider, sponsor })
+        Ok(Self {
+            provider,
+            links,
+            allowance,
+            label,
+        })
     }
 }
 
-impl Gate for VoucherGate {
-    type Input = cvch::Voucher;
+impl<S: cvch::link::LinkStore, A: cvch::link::Allowance> Gate for VoucherGate<S, A> {
+    type Input = cvch::link::Request;
     fn descriptor(&self) -> Descriptor {
         description(
             "cvch",
             &self.provider,
-            "Present a member voucher.",
-            "cvch.Voucher",
+            "Present a voucher link.",
+            "cvch.link.Request",
         )
     }
-    async fn verify(&self, context: Context<'_>, voucher: &Self::Input) -> Result<Proof> {
-        if voucher.valid_until > i64::MAX as u64 {
-            return Err(Error::Refused);
-        }
-        let now = context.now.try_into().map_err(|_| Error::Invalid)?;
-        cvch::verify(
-            voucher,
-            &self.sponsor,
-            &context.snapshot.community,
-            context.subject.as_bytes(),
-            now,
-        )
-        .map_err(|_| Error::Refused)?;
+    async fn verify(&self, context: Context<'_>, request: &Self::Input) -> Result<Proof> {
         let days = context
             .snapshot
             .content
@@ -65,14 +66,42 @@ impl Gate for VoucherGate {
             .and_then(serde_json::Value::as_i64)
             .filter(|days| (1..=365).contains(days))
             .ok_or(Error::Policy)?;
+        let now = u64::try_from(context.now).map_err(|_| Error::Invalid)?;
         let expiry = (context.now / 86_400)
             .checked_add(days)
             .and_then(|days| days.checked_mul(86_400))
             .ok_or(Error::Invalid)?;
-        // cvch explicitly delegates durable first-claim-wins storage to its host.
-        // Verification and receipt hashing stay entirely in the leaf.
-        let claim = Claim::new("cvch", cvch::receipt_id(&voucher.id).into_bytes())?;
-        Ok(Proof::retained(expiry).with_claim(claim))
+        let (presentation, nonce) = request.parts().map_err(|_| Error::Refused)?;
+        let vouching = cvch::link::Vouching {
+            store: &*self.links,
+            allowance: &*self.allowance,
+        };
+        let label = self.label.clone();
+        let outcome = vouching
+            .redeem(
+                &presentation,
+                &context.snapshot.community,
+                context.subject,
+                &nonce,
+                move |issuer| label(issuer),
+                now,
+            )
+            .await
+            .map_err(|_| Error::Refused)?;
+        match outcome {
+            cvch::link::Outcome::Waiting => Err(Error::Pending),
+            cvch::link::Outcome::Admitted | cvch::link::Outcome::Known => {
+                // The link store owns the use count; this claim makes the proof
+                // once-only per person and atomic with its commit, so a repeated
+                // presentation after sign-off is the only way to a second attempt
+                // and a failed commit can simply be retried.
+                let claim = Claim::new(
+                    "cvch",
+                    presentation.id().claim(context.subject).into_bytes(),
+                )?;
+                Ok(Proof::retained(expiry).with_claim(claim))
+            }
+        }
     }
 }
 

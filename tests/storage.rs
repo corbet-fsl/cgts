@@ -65,7 +65,12 @@ async fn reopen_isolation_and_all_index_plans() {
     assert_eq!(rows[0].columns(), ["domain", "marker"]);
     assert_eq!(
         rows[0].get_value(1).unwrap(),
-        &crlt::Value::Blob(cvch::receipt_id("persist").into_bytes())
+        &crlt::Value::Blob(
+            cvch::link::LinkId::parse(&voucher("garden", "persist", 2000).id)
+                .unwrap()
+                .claim("alice")
+                .into_bytes()
+        )
     );
 }
 

@@ -37,6 +37,9 @@ pub enum Error {
     /// Evidence failed verification or was already spent.
     #[error("gate refused")]
     Refused,
+    /// Evidence is accepted and waits for a human decision; present it again later.
+    #[error("gate pending")]
+    Pending,
     /// An active legal restriction covers this action.
     #[error("action vetoed")]
     Vetoed,

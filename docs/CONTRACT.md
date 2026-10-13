@@ -39,14 +39,18 @@ service. It never deletes spent markers. No facade logs or traces requests.
 
 ## Leaf adapters
 
-Voucher signatures bind community and intended member through cvch's signed
-member binding. The sponsor's precise redemption deadline is used only during
-verification. Retained validity comes from `voucher.validity_days`, a crbk
-community technical setting (default 30, range 1–365), rounded to the UTC day.
-`gates::define_settings` installs its catalogue entry. An intercepted voucher
-cannot burn another member's receipt. The permanent opaque receipt marker and
-result update commit atomically; failure rolls back both. No sponsor identity,
-voucher ID, signature or redemption time is retained.
+The voucher gate presents a cvch link (`cvch::link::Request`) to the service's
+link store and allowance port. The link store owns the number of uses; a link
+that waits for the issuer's sign-off is `Error::Pending` and the member
+presents it again for the decision. Retained validity comes from
+`voucher.validity_days`, a crbk community technical setting (default 30, range
+1-365), rounded to the UTC day. `gates::define_settings` installs its catalogue
+entry. The permanent opaque claim marker (hash of link id and member) and the
+result update commit atomically; failure rolls back both, so a person is proven
+once per link and an interrupted commit can be retried. The sponsor's community
+handle is recorded on the link only when the service's label callback returns
+one, that is, when the visibility setting is on. No link secret or redemption
+time is retained.
 
 ProfileGate delegates signed v2 profile and pin opening checks to cgrd. The
 verifier's minimum epoch must cover the effective epoch from cplc's verified
