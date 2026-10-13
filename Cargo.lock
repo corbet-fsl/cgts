@@ -1223,13 +1223,14 @@ dependencies = [
 [[package]]
 name = "cvch"
 version = "0.2.1"
-source = "git+https://git.corbet.ch/corbet-foss/cvch?branch=main#7cb895c09b712f55d360c88cbf89dd21f2292dd7"
+source = "git+https://git.corbet.ch/corbet-foss/cvch?branch=vouchers-main#a5e122c2b41dc36ac018e6d28fed519d663946da"
 dependencies = [
  "cfbk",
  "csgn",
  "ed25519-dalek 3.0.0",
  "hex",
  "hmac 0.13.0",
+ "hpke",
  "serde",
  "serde_json",
  "sha2 0.11.0",

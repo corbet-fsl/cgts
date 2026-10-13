@@ -9,12 +9,7 @@ async fn multiple_providers<S: Storage, L: LegalVeto>(keeper: Gatekeeper<S, L>) 
         crbk::provider_key(GateLevel::Community, "cvch", "other"),
         true.into(),
     );
-    // Use the same real sponsor key as the existing signed voucher fixtures.
-    let other = gates::VoucherGate::new(
-        "other",
-        ed25519_dalek::SigningKey::from_bytes(&[7; 32]).verifying_key(),
-    )
-    .unwrap();
+    let other = gates::VoucherGate::new("other", links().clone()).unwrap();
     let context = context(&snapshot);
     let first = keeper
         .run(context, &gate(), &voucher("garden", "provider-one", 2000))
@@ -240,12 +235,19 @@ async fn forged_expired_cross_community_and_untrusted_contexts_fail() {
     let mut snapshot = snapshot("garden", "cvch");
     let input = voucher("garden", "not-burned", 2000);
     let mut forged = input.clone();
-    forged.signature[0] ^= 1;
+    forged.secret.replace_range(
+        ..1,
+        if forged.secret.starts_with('0') {
+            "1"
+        } else {
+            "0"
+        },
+    );
     for input in [
         forged,
         voucher("elsewhere", "not-burned", 2000),
         voucher("garden", "expired", 1100),
-        voucher("garden", "huge", u64::MAX),
+        voucher_unknown(),
     ] {
         assert!(matches!(
             keeper.run(context(&snapshot), &gate(), &input).await,
@@ -283,7 +285,7 @@ async fn forged_expired_cross_community_and_untrusted_contexts_fail() {
     assert!(
         gates::VoucherGate::new(
             "alias/provider",
-            ed25519_dalek::SigningKey::from_bytes(&[7; 32]).verifying_key()
+            std::sync::Arc::new(cvch::link::MemoryLinks::default()),
         )
         .is_err()
     );
@@ -455,18 +457,23 @@ fn gate_result_debug_does_not_expose_the_subject() {
 }
 
 #[tokio::test]
-async fn voucher_is_member_bound_and_uses_coarse_policy_validity() {
+async fn voucher_link_admits_its_first_bearer_and_uses_coarse_policy_validity() {
     let keeper = memory("garden");
     let mut snapshot = snapshot("garden", "cvch");
     snapshot
         .content
         .insert(gates::VOUCHER_VALIDITY_DAYS.into(), 14.into());
     let input = voucher("garden", "bound", 1200);
+    let checked = keeper
+        .run(context(&snapshot), &gate(), &input)
+        .await
+        .unwrap();
+    assert_eq!(checked.result().valid_until, 14 * 86400);
     assert!(matches!(
         keeper
             .run(
                 Context {
-                    subject: "interceptor",
+                    subject: "latecomer",
                     ..context(&snapshot)
                 },
                 &gate(),
@@ -475,11 +482,6 @@ async fn voucher_is_member_bound_and_uses_coarse_policy_validity() {
             .await,
         Err(Error::Refused)
     ));
-    let checked = keeper
-        .run(context(&snapshot), &gate(), &input)
-        .await
-        .unwrap();
-    assert_eq!(checked.result().valid_until, 14 * 86400);
     assert_eq!(
         keeper
             .collect(Context {
@@ -491,6 +493,55 @@ async fn voucher_is_member_bound_and_uses_coarse_policy_validity() {
             .len(),
         1
     );
+}
+
+#[tokio::test]
+async fn sign_off_waits_then_admits_once_and_decline_spends_nothing() {
+    let keeper = memory("garden");
+    let snapshot = snapshot("garden", "cvch");
+    let (input, manage) = signoff_voucher("garden", "multi");
+    let waiting = Context {
+        subject: "alice",
+        ..context(&snapshot)
+    };
+    assert_eq!(
+        keeper.run(waiting, &gate(), &input).await.err(),
+        Some(Error::Pending)
+    );
+    assert!(keeper.collect(waiting).await.unwrap().is_empty());
+    // A second presentation while waiting changes nothing.
+    assert_eq!(
+        keeper.run(waiting, &gate(), &input).await.err(),
+        Some(Error::Pending)
+    );
+    let decision = |member: &'static str, confirm: bool| {
+        block_on(cvch::link::LinkStore::update(
+            &**links(),
+            manage.id(),
+            |link| link.decide(&manage, member, confirm),
+        ))
+    };
+    assert_eq!(decision("alice", true), Ok(true));
+    keeper.run(waiting, &gate(), &input).await.unwrap();
+    assert_eq!(keeper.collect(waiting).await.unwrap().len(), 1);
+    // Once proven, the same person cannot be proven again from the same link.
+    assert!(matches!(
+        keeper.run(waiting, &gate(), &input).await,
+        Err(Error::Refused)
+    ));
+    let bob = Context {
+        subject: "bob",
+        ..context(&snapshot)
+    };
+    assert_eq!(
+        keeper.run(bob, &gate(), &input).await.err(),
+        Some(Error::Pending)
+    );
+    assert_eq!(decision("bob", false), Ok(false));
+    assert!(matches!(
+        keeper.run(bob, &gate(), &input).await,
+        Err(Error::Pending)
+    ));
 }
 
 #[tokio::test]
@@ -522,18 +573,18 @@ async fn checked_evidence_cannot_hide_changed_settings_behind_the_same_revision(
 async fn every_retained_provider_expiry_is_rounded_down_to_a_day() {
     // A host adapter over real signed voucher verification: its retained lifetime
     // is the authenticated redemption deadline, so the facade must round it.
-    struct SignedDeadline(GateLevel);
+    struct SignedDeadline(GateLevel, i64);
     impl Gate for SignedDeadline {
-        type Input = cvch::Voucher;
+        type Input = cvch::link::Request;
         fn descriptor(&self) -> Descriptor {
             Descriptor {
                 level: self.0,
                 ..gate().descriptor()
             }
         }
-        async fn verify(&self, context: Context<'_>, input: &cvch::Voucher) -> Result<Proof> {
+        async fn verify(&self, context: Context<'_>, input: &cvch::link::Request) -> Result<Proof> {
             gate().verify(context, input).await?;
-            Ok(Proof::retained(input.valid_until as i64))
+            Ok(Proof::retained(self.1))
         }
     }
     let keeper = memory("garden");
@@ -542,7 +593,8 @@ async fn every_retained_provider_expiry_is_rounded_down_to_a_day() {
         now: 86401,
         ..context(&snapshot)
     };
-    let provider = SignedDeadline(GateLevel::Community);
+    let provider = SignedDeadline(GateLevel::Community, 172923);
+    let late = SignedDeadline(GateLevel::Community, 86402);
     let accepted = voucher("garden", "deadline", 172923);
     let checked = keeper.run(context, &provider, &accepted).await.unwrap();
     assert_eq!(checked.result().valid_until, 172800);
@@ -553,7 +605,7 @@ async fn every_retained_provider_expiry_is_rounded_down_to_a_day() {
     // Authentic unexpired evidence can still have a coarse deadline in the past.
     let short = voucher("garden", "short-deadline", 86402);
     assert!(matches!(
-        keeper.run(context, &provider, &short).await,
+        keeper.run(context, &late, &short).await,
         Err(Error::Refused)
     ));
     assert_eq!(
@@ -562,70 +614,17 @@ async fn every_retained_provider_expiry_is_rounded_down_to_a_day() {
     );
     assert!(matches!(
         keeper
-            .run(context, &SignedDeadline(GateLevel::Global), &accepted)
+            .run(
+                context,
+                &SignedDeadline(GateLevel::Global, 172923),
+                &accepted
+            )
             .await,
         Err(Error::Scope)
     ));
     assert!(matches!(
         keeper.check(context, vec![checked.clone(), checked]).await,
         Err(Error::Scope)
-    ));
-}
-
-#[tokio::test]
-async fn sponsor_key_port_accepts_both_upstream_versions_and_raw_bytes() {
-    let key = ed25519_dalek::SigningKey::from_bytes(&[7; 32]).verifying_key();
-    let legacy = ed25519_dalek_v2::SigningKey::from_bytes(&[7; 32]).verifying_key();
-    let snapshot = snapshot("garden", "cvch");
-    for gate in [
-        gates::VoucherGate::new("local", key).unwrap(),
-        gates::VoucherGate::new("local", legacy).unwrap(),
-        gates::VoucherGate::new("local", key.to_bytes()).unwrap(),
-    ] {
-        let keeper = memory("garden");
-        let checked = keeper
-            .run(
-                context(&snapshot),
-                &gate,
-                &voucher("garden", "key-port", 2000),
-            )
-            .await
-            .unwrap();
-        assert_eq!(checked.result().gate, "cvch");
-    }
-    let wrong = gates::VoucherGate::new(
-        "local",
-        ed25519_dalek_v2::SigningKey::from_bytes(&[8; 32]).verifying_key(),
-    )
-    .unwrap();
-    assert!(matches!(
-        memory("garden")
-            .run(
-                context(&snapshot),
-                &wrong,
-                &voucher("garden", "wrong-key", 2000)
-            )
-            .await,
-        Err(Error::Refused)
-    ));
-}
-
-#[test]
-fn sponsor_key_port_rejects_malformed_bytes() {
-    for bytes in [vec![], vec![7; 31], vec![7; 33]] {
-        assert!(matches!(
-            gates::VoucherGate::new("local", bytes),
-            Err(Error::Invalid)
-        ));
-    }
-    // Select a rejected encoding with the maintained decoder, not local curve logic.
-    let invalid = (0..=u8::MAX)
-        .map(|byte| [byte; 32])
-        .find(|bytes| ed25519_dalek::VerifyingKey::from_bytes(bytes).is_err())
-        .unwrap();
-    assert!(matches!(
-        gates::VoucherGate::new("local", invalid),
-        Err(Error::Invalid)
     ));
 }
 
@@ -707,4 +706,33 @@ fn voucher_catalogue_definition_is_idempotent_and_keeps_host_configuration() {
         .unwrap();
     gates::define_settings(&mut configured).unwrap();
     assert_eq!(configured.catalog()[gates::VOUCHER_VALIDITY_DAYS], custom);
+    let mut visible = crbk::Rulebook::default();
+    let mut hidden = first[gates::VOUCHER_SPONSOR_VISIBLE].clone();
+    hidden.default = false.into();
+    visible
+        .define(gates::VOUCHER_SPONSOR_VISIBLE, hidden.clone())
+        .unwrap();
+    gates::define_settings(&mut visible).unwrap();
+    assert_eq!(visible.catalog()[gates::VOUCHER_SPONSOR_VISIBLE], hidden);
+    assert_eq!(first[gates::VOUCHER_SPONSOR_VISIBLE].default, true);
+}
+
+#[tokio::test]
+async fn gate_relays_the_sealed_notice_and_stores_no_issuer() {
+    let keeper = memory("garden");
+    let snapshot = snapshot("garden", "cvch");
+    let (input, manage) = signoff_voucher("garden", "relay");
+    assert_eq!(
+        keeper.run(context(&snapshot), &gate(), &input).await.err(),
+        Some(Error::Pending)
+    );
+    let view = block_on(cvch::link::LinkStore::update(
+        &**links(),
+        manage.id(),
+        |link| link.view(&manage),
+    ))
+    .unwrap();
+    assert_eq!(view.waiting.len(), 1);
+    assert_eq!(view.waiting[0].notice, input.notice);
+    assert!(!input.notice.contains("newcomer"));
 }

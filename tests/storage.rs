@@ -65,7 +65,12 @@ async fn reopen_isolation_and_all_index_plans() {
     assert_eq!(rows[0].columns(), ["domain", "marker"]);
     assert_eq!(
         rows[0].get_value(1).unwrap(),
-        &crlt::Value::Blob(cvch::receipt_id("persist").into_bytes())
+        &crlt::Value::Blob(
+            cvch::link::LinkId::parse(&voucher("garden", "persist", 2000).id)
+                .unwrap()
+                .claim("alice")
+                .into_bytes()
+        )
     );
 }
 
@@ -395,4 +400,66 @@ async fn imported_rowid_schema_with_a_real_scan_fails_the_plan_gate() {
     let store = LibsqlStore::new(&db, "garden").unwrap();
     assert_eq!(store.check_query_plans().await, Err(Error::Storage));
     assert_eq!(store.load("subject").await, Err(Error::Storage));
+}
+
+#[tokio::test]
+async fn link_store_is_atomic_durable_and_isolated_by_community() {
+    use cvch::link::{Link, LinkStore, Options, Token};
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("links.db");
+    let (token, _) = Token::issue([5; 32], [6; 32]).unwrap();
+    let options = Options::new(2, 500, None, false).unwrap();
+    {
+        let db = open(&path).await;
+        let links = LibsqlLinks::new(&db, "garden").unwrap();
+        links.check_query_plans().await.unwrap();
+        let link = Link::issue(&token.registration(), "garden", options, 1000).unwrap();
+        links.insert(link.clone()).await.unwrap();
+        assert!(links.insert(link).await.is_err());
+    }
+    let db = open(&path).await;
+    let links = LibsqlLinks::new(&db, "garden").unwrap();
+    let other = LibsqlLinks::new(&db, "meadow").unwrap();
+    assert!(other.update(&token.id(), |_| Ok(())).await.is_err());
+    assert!(
+        !links
+            .update(&token.id(), |l| Ok(l.revoked()))
+            .await
+            .unwrap()
+    );
+    // A failing change leaves the stored record untouched.
+    let failed: std::result::Result<(), cvch::Error> = links
+        .update(&token.id(), |l| {
+            l.revoke(&token.manage())?;
+            Err(cvch::Error::Rejected)
+        })
+        .await;
+    assert!(failed.is_err());
+    assert!(
+        !links
+            .update(&token.id(), |l| Ok(l.revoked()))
+            .await
+            .unwrap()
+    );
+    links
+        .update(&token.id(), |l| l.revoke(&token.manage()).map(drop))
+        .await
+        .unwrap();
+    assert!(
+        links
+            .update(&token.id(), |l| Ok(l.revoked()))
+            .await
+            .unwrap()
+    );
+    assert!(LibsqlLinks::new(&db, "").is_err());
+    // A corrupt body is refused, never repaired.
+    db.community("garden")
+        .unwrap()
+        .execute(
+            "UPDATE cgts_links SET body = ?2 WHERE id = ?1",
+            crlt::params![token.id().as_str(), "not json"],
+        )
+        .await
+        .unwrap();
+    assert!(links.update(&token.id(), |_| Ok(())).await.is_err());
 }

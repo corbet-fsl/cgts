@@ -6,6 +6,7 @@ mod account;
 mod engine;
 pub mod gates;
 pub mod legal_storage;
+pub mod links;
 mod model;
 mod passport;
 pub mod payments;
@@ -20,6 +21,7 @@ pub use account::{
 pub use cblc;
 pub use crbk::{GateLevel, MembershipState, Snapshot};
 pub use engine::*;
+pub use links::LibsqlLinks;
 pub use model::*;
 pub use passport::*;
 pub use storage::{LibsqlStore, MemoryStore, SCHEMA, Storage};
@@ -42,6 +44,9 @@ pub enum Error {
     /// Evidence failed verification or was already spent.
     #[error("gate refused")]
     Refused,
+    /// Evidence is accepted and waits for a human decision; present it again later.
+    #[error("gate pending")]
+    Pending,
     /// An active legal restriction covers this action.
     #[error("action vetoed")]
     Vetoed,

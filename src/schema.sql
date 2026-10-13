@@ -12,3 +12,9 @@ CREATE TABLE cgts_spent (
     marker BLOB NOT NULL,
     PRIMARY KEY (community_id, domain, marker)
 ) WITHOUT ROWID;
+CREATE TABLE cgts_links (
+    community_id TEXT NOT NULL,
+    id TEXT NOT NULL,
+    body TEXT NOT NULL,
+    PRIMARY KEY (community_id, id)
+) WITHOUT ROWID;
