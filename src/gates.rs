@@ -14,10 +14,6 @@ fn description(gate: &str, provider: &str, text: &str, input: &str) -> Descripto
     }
 }
 
-/// Whether the issuer's community handle may be recorded with an admission,
-/// that is, whether the visibility setting is on. Called with the issuer's member id.
-pub type SponsorVisible = dyn Fn(&str) -> bool + Send + Sync;
-
 /// Voucher gate over cvch links. The service owns the link store and the
 /// allowance port; the redeeming member supplies only the link request. A
 /// link that waits for the issuer's sign-off is [`Error::Pending`]: the member
@@ -26,7 +22,6 @@ pub struct VoucherGate<S, A> {
     provider: String,
     links: std::sync::Arc<S>,
     allowance: std::sync::Arc<A>,
-    visible: std::sync::Arc<SponsorVisible>,
 }
 
 impl<S, A> VoucherGate<S, A> {
@@ -35,7 +30,6 @@ impl<S, A> VoucherGate<S, A> {
         provider: impl Into<String>,
         links: std::sync::Arc<S>,
         allowance: std::sync::Arc<A>,
-        visible: std::sync::Arc<SponsorVisible>,
     ) -> Result<Self> {
         let provider = provider.into();
         component(&provider)?;
@@ -43,7 +37,6 @@ impl<S, A> VoucherGate<S, A> {
             provider,
             links,
             allowance,
-            visible,
         })
     }
 }
@@ -76,14 +69,15 @@ impl<S: cvch::link::LinkStore, A: cvch::link::Allowance> Gate for VoucherGate<S,
             store: &*self.links,
             allowance: &*self.allowance,
         };
-        let visible = self.visible.clone();
+        // Default visible when the platform rulebook predates the setting.
+        let visible = context.snapshot.content.get(VOUCHER_SPONSOR_VISIBLE) != Some(&false.into());
         let outcome = vouching
             .redeem(
                 &presentation,
                 &context.snapshot.community,
                 context.subject,
                 &nonce,
-                move |issuer| visible(issuer),
+                move |_| visible,
                 now,
             )
             .await
@@ -259,6 +253,10 @@ impl<V: cblc::accounting::AccountProofVerifier + Send + 'static> Gate for Record
 
 /// Resolved voucher gate validity, separate from the signed redemption deadline.
 pub const VOUCHER_VALIDITY_DAYS: &str = "voucher.validity_days";
+/// Whether an admission records the sponsor's community handle ("vouched for
+/// by ..."). Default on. Turning it off is immediate and final for earlier
+/// admissions; turning it on again affects only later ones.
+pub const VOUCHER_SPONSOR_VISIBLE: &str = "voucher.sponsor_visible";
 
 /// Install the voucher catalogue entry without overriding a service definition.
 pub fn define_settings(book: &mut crbk::Rulebook) -> Result<()> {
@@ -273,6 +271,20 @@ pub fn define_settings(book: &mut crbk::Rulebook) -> Result<()> {
                     min: Some(1.into()),
                     max: Some(365.into()),
                 },
+                lowest_layer: crbk::Layer::Community,
+                kind: crbk::SettingKind::Technical,
+            },
+        )
+        .map_err(|_| Error::Policy)?;
+    }
+    if !book.catalog().contains_key(VOUCHER_SPONSOR_VISIBLE) {
+        book.define(
+            VOUCHER_SPONSOR_VISIBLE,
+            crbk::Setting {
+                value_type: crbk::SettingType::Boolean,
+                nullable: false,
+                default: true.into(),
+                bounds: crbk::Bounds::default(),
                 lowest_layer: crbk::Layer::Community,
                 kind: crbk::SettingKind::Technical,
             },

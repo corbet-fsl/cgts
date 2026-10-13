@@ -237,7 +237,6 @@ async fn forged_expired_cross_community_and_untrusted_contexts_fail() {
             "alias/provider",
             std::sync::Arc::new(cvch::link::MemoryLinks::default()),
             std::sync::Arc::new(cvch::link::MemoryAllowance::default()),
-            std::sync::Arc::new(|_| false),
         )
         .is_err()
     );
@@ -663,4 +662,39 @@ fn voucher_catalogue_definition_is_idempotent_and_keeps_host_configuration() {
         .unwrap();
     gates::define_settings(&mut configured).unwrap();
     assert_eq!(configured.catalog()[gates::VOUCHER_VALIDITY_DAYS], custom);
+    let mut visible = crbk::Rulebook::default();
+    let mut hidden = first[gates::VOUCHER_SPONSOR_VISIBLE].clone();
+    hidden.default = false.into();
+    visible
+        .define(gates::VOUCHER_SPONSOR_VISIBLE, hidden.clone())
+        .unwrap();
+    gates::define_settings(&mut visible).unwrap();
+    assert_eq!(visible.catalog()[gates::VOUCHER_SPONSOR_VISIBLE], hidden);
+    assert_eq!(first[gates::VOUCHER_SPONSOR_VISIBLE].default, true);
+}
+
+#[tokio::test]
+async fn sponsor_handle_is_recorded_only_while_the_setting_is_on() {
+    let keeper = memory("garden");
+    let mut snapshot = snapshot("garden", "cvch");
+    let recorded = |input: &cvch::link::Request| {
+        let id = cvch::link::LinkId::parse(&input.id).unwrap();
+        let links = block_on(cvch::link::LinkStore::issued_by(&**links(), "sponsor")).unwrap();
+        links
+            .into_iter()
+            .find(|link| link.id() == &id)
+            .unwrap()
+            .admitted()
+            .first()
+            .and_then(|entry| entry.sponsor.clone())
+    };
+    let on = voucher("garden", "visible", 2000);
+    keeper.run(context(&snapshot), &gate(), &on).await.unwrap();
+    assert_eq!(recorded(&on).as_deref(), Some("@sponsor"));
+    snapshot
+        .content
+        .insert(gates::VOUCHER_SPONSOR_VISIBLE.into(), false.into());
+    let off = voucher("garden", "hidden", 2000);
+    keeper.run(context(&snapshot), &gate(), &off).await.unwrap();
+    assert_eq!(recorded(&off), None);
 }

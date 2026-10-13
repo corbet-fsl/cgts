@@ -120,13 +120,7 @@ pub fn signoff_voucher(community: &str, id: &str) -> (cvch::link::Request, cvch:
 }
 
 pub fn gate() -> TestGate {
-    gates::VoucherGate::new(
-        "local",
-        links().clone(),
-        allowance().clone(),
-        std::sync::Arc::new(|_| true),
-    )
-    .unwrap()
+    gates::VoucherGate::new("local", links().clone(), allowance().clone()).unwrap()
 }
 
 // A real signature/authority test adapter, not a legal qualification claim.
