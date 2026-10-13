@@ -628,7 +628,7 @@ dependencies = [
 [[package]]
 name = "cblc"
 version = "0.0.0"
-source = "git+https://git.corbet.ch/corbet-libs/cblc?branch=main#091a294b6b946e0ce8dfbb9e4571eb5833864724"
+source = "git+https://git.corbet.ch/corbet-libs/cblc?branch=main#e2a00b8b37678f7fc45ea12babd17892d890b950"
 dependencies = [
  "cbcn",
  "cmbl",
