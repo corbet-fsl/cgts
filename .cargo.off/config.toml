@@ -1,2 +1,0 @@
-[patch."https://git.corbet.ch/corbet-foss/cvch"]
-cvch = { path = "/home/richc/agents/scratch/vcore/cvch" }
