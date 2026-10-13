@@ -67,7 +67,7 @@ fn token_for(label: &str, community: &str, id: &str) -> cvch::link::Token {
         )
         .as_bytes(),
     );
-    cvch::link::Token::issue(seed.into(), [7; 32]).unwrap().0
+    cvch::link::Token::issue(seed.into(), [7; 32], [5; 32]).unwrap().0
 }
 
 fn request(token: &cvch::link::Token, community: &str) -> cvch::link::Request {

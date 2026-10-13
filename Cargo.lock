@@ -618,7 +618,6 @@ dependencies = [
 [[package]]
 name = "cbcn"
 version = "0.1.0"
-source = "git+https://git.corbet.ch/corbet-foss/cbcn?branch=main#2a2dbbadabde75225fecc73e8975eff1576bbe2d"
 dependencies = [
  "csgn",
  "serde",
@@ -628,7 +627,6 @@ dependencies = [
 [[package]]
 name = "cblc"
 version = "0.0.0"
-source = "git+https://git.corbet.ch/corbet-libs/cblc?branch=main#b67be7da6ecd1dac841269503376f7e4775417c3"
 dependencies = [
  "cbcn",
  "cmbl",
@@ -678,7 +676,6 @@ dependencies = [
 [[package]]
 name = "cfbk"
 version = "0.0.0"
-source = "git+https://git.corbet.ch/corbet-foss/cfbk?branch=main#e03ed80f037b02dcedac1657c4fd23615bae3815"
 
 [[package]]
 name = "cfg-if"
@@ -695,7 +692,6 @@ checksum = "f079e83a288787bcd14a6aea84cee5c87a67c5a3e660c30f557a3d24761b3527"
 [[package]]
 name = "cgrd"
 version = "0.0.0"
-source = "git+https://git.corbet.ch/corbet-foss/cgrd?branch=main#6ed9485f32e55cd3efc78f36bbad1e4678989688"
 dependencies = [
  "bigdecimal",
  "cpns",
@@ -828,7 +824,6 @@ dependencies = [
 [[package]]
 name = "clbs"
 version = "0.0.0"
-source = "git+https://git.corbet.ch/corbet-foss/clbs?branch=main#1d033f9e2f602a5dc65a344003c1436867d03810"
 dependencies = [
  "serde",
  "serde_json",
@@ -847,7 +842,6 @@ dependencies = [
 [[package]]
 name = "cmbl"
 version = "0.1.0"
-source = "git+https://git.corbet.ch/corbet-foss/cmbl.git?branch=main#87995601f9e9373cd8d31777e6e40a6ef1f3024c"
 dependencies = [
  "blake3",
  "blind-rsa-signatures",
@@ -867,7 +861,6 @@ dependencies = [
 [[package]]
 name = "cmmr"
 version = "0.1.0"
-source = "git+https://git.corbet.ch/corbet-foss/cmmr.git?branch=main#4e7a53703ccdf75a760af9ad6f4a4b9f429c952e"
 dependencies = [
  "serde",
 ]
@@ -953,7 +946,6 @@ dependencies = [
 [[package]]
 name = "cpmt"
 version = "0.2.0"
-source = "git+https://git.corbet.ch/corbet-foss/cpmt?branch=main#d3961bfc9efe0f55de250e3acf7e59bfd883a24d"
 dependencies = [
  "cfbk",
  "ed25519-dalek 3.0.0",
@@ -968,7 +960,6 @@ dependencies = [
 [[package]]
 name = "cpns"
 version = "0.0.0"
-source = "git+https://git.corbet.ch/corbet-foss/cpns?branch=main#9470e80c458c7769a0ddc33fb1c25fc4fa6113b1"
 dependencies = [
  "crlt",
  "getrandom 0.4.3",
@@ -980,7 +971,6 @@ dependencies = [
 [[package]]
 name = "cpsd"
 version = "0.0.0"
-source = "git+https://git.corbet.ch/corbet-foss/cpsd?branch=main#908ceb88a2896baf6e633b30abcada2f25bcbabe"
 dependencies = [
  "ark-bls12-381",
  "ark-ec 0.4.2",
@@ -1029,7 +1019,6 @@ dependencies = [
 [[package]]
 name = "crbk"
 version = "0.0.0"
-source = "git+https://git.corbet.ch/corbet-foss/crbk?branch=main#fd5af1caa6b903dd6cbf0e5064510861ab772a5f"
 dependencies = [
  "crlt",
  "czkp",
@@ -1042,7 +1031,6 @@ dependencies = [
 [[package]]
 name = "crlt"
 version = "0.0.0"
-source = "git+https://git.corbet.ch/corbet-foss/crlt?branch=main#3db630da2dfd176bc665d1617b89a7c0c4ebb2c9"
 dependencies = [
  "deadpool",
  "libsql",
@@ -1120,7 +1108,6 @@ dependencies = [
 [[package]]
 name = "csgn"
 version = "0.0.0"
-source = "git+https://git.corbet.ch/corbet-foss/csgn?branch=main#71357f023972eea8c90951da05303eabd9d7e0a2"
 dependencies = [
  "ciborium-ll",
  "coset",
@@ -1133,7 +1120,6 @@ dependencies = [
 [[package]]
 name = "cshm"
 version = "0.0.0"
-source = "git+https://git.corbet.ch/corbet-foss/cshm?branch=main#088595f28f82734e449780eb20e75efd67e985c7"
 dependencies = [
  "bigdecimal",
  "jsonschema",
@@ -1145,7 +1131,6 @@ dependencies = [
 [[package]]
 name = "cssr"
 version = "0.0.0"
-source = "git+https://git.corbet.ch/corbet-foss/cssr?branch=main#2e635bc250f8e55ae6ca6f8c1f2b8120eb169f98"
 dependencies = [
  "crlt",
  "czkp",
@@ -1164,7 +1149,6 @@ checksum = "8fd9f3db6f2cfef61c10613071955154ffdc9e515daebff26de4b54e35038fdd"
 [[package]]
 name = "cthl"
 version = "0.0.0"
-source = "git+https://git.corbet.ch/corbet-foss/cthl?branch=main#9bf449ec8a1848de0d2c990b5a322b08fcd60b7b"
 dependencies = [
  "governor",
 ]
@@ -1224,7 +1208,6 @@ dependencies = [
 [[package]]
 name = "cvch"
 version = "0.2.1"
-source = "git+https://git.corbet.ch/corbet-foss/cvch?branch=main#a0f153cf194f6513cf6e60eefa087d906616fc8f"
 dependencies = [
  "cfbk",
  "csgn",
@@ -1243,7 +1226,6 @@ dependencies = [
 [[package]]
 name = "cvfy"
 version = "0.0.0"
-source = "git+https://git.corbet.ch/corbet-foss/cvfy?branch=main#db515b9ff559818e77e513c6160197d39de3f5cf"
 dependencies = [
  "czkp",
  "data-encoding",
@@ -1255,7 +1237,6 @@ dependencies = [
 [[package]]
 name = "czkp"
 version = "0.0.0"
-source = "git+https://git.corbet.ch/corbet-foss/czkp?branch=main#f776a8b96304c87eed6c2c050ee31ac9be05a0f4"
 dependencies = [
  "ark-bn254",
  "ark-ff 0.6.0",
@@ -4878,3 +4859,313 @@ name = "zmij"
 version = "1.0.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "29666d0abbfad1e3dc4dcf6144730dd3a3ab225bbbdac83319345b1b44ccfc1b"
+
+[[patch.unused]]
+name = "cwlt"
+version = "0.0.0"
+
+[[patch.unused]]
+name = "cwlt-engine"
+version = "0.0.0"
+
+[[patch.unused]]
+name = "cgth"
+version = "0.1.0"
+
+[[patch.unused]]
+name = "browser-coverage-runtime"
+version = "0.0.0"
+
+[[patch.unused]]
+name = "ckmg"
+version = "0.0.0"
+
+[[patch.unused]]
+name = "cvld"
+version = "0.2.0"
+
+[[patch.unused]]
+name = "browser-coverage-runtime"
+version = "0.0.0"
+
+[[patch.unused]]
+name = "cpky"
+version = "0.0.0"
+
+[[patch.unused]]
+name = "cblc-private-accounting-fixture"
+version = "0.0.0"
+
+[[patch.unused]]
+name = "cmbx"
+version = "0.0.0"
+
+[[patch.unused]]
+name = "cblv"
+version = "0.1.0"
+
+[[patch.unused]]
+name = "cchr"
+version = "0.1.0"
+
+[[patch.unused]]
+name = "cdlv"
+version = "0.1.0"
+
+[[patch.unused]]
+name = "cprz"
+version = "0.0.0"
+
+[[patch.unused]]
+name = "cprz-audio"
+version = "0.0.0"
+
+[[patch.unused]]
+name = "cprz-blob"
+version = "0.0.0"
+
+[[patch.unused]]
+name = "cprz-delta"
+version = "0.0.0"
+
+[[patch.unused]]
+name = "cprz-image"
+version = "0.0.0"
+
+[[patch.unused]]
+name = "cprz-pad"
+version = "0.0.0"
+
+[[patch.unused]]
+name = "cprz-structured"
+version = "0.0.0"
+
+[[patch.unused]]
+name = "cprz-text"
+version = "0.0.0"
+
+[[patch.unused]]
+name = "cprz-video"
+version = "0.0.0"
+
+[[patch.unused]]
+name = "cmsh"
+version = "0.0.0"
+
+[[patch.unused]]
+name = "cthr"
+version = "0.1.0"
+
+[[patch.unused]]
+name = "cmty"
+version = "0.0.0"
+
+[[patch.unused]]
+name = "browser-coverage-runtime"
+version = "0.0.0"
+
+[[patch.unused]]
+name = "cwst"
+version = "0.0.0"
+
+[[patch.unused]]
+name = "crlt"
+version = "0.0.0"
+source = "git+https://git.corbet.ch/corbet-foss/crlt?branch=main#3db630da2dfd176bc665d1617b89a7c0c4ebb2c9"
+
+[[patch.unused]]
+name = "cgbl"
+version = "0.0.0"
+
+[[patch.unused]]
+name = "cphn"
+version = "0.1.1"
+
+[[patch.unused]]
+name = "browser-coverage-runtime"
+version = "0.0.0"
+
+[[patch.unused]]
+name = "cxch"
+version = "0.1.0"
+
+[[patch.unused]]
+name = "cdht"
+version = "0.0.0"
+
+[[patch.unused]]
+name = "cpns"
+version = "0.0.0"
+source = "git+https://git.corbet.ch/corbet-foss/cpns?branch=main#9470e80c458c7769a0ddc33fb1c25fc4fa6113b1"
+
+[[patch.unused]]
+name = "ctcs"
+version = "0.1.0"
+
+[[patch.unused]]
+name = "cplc"
+version = "0.0.0"
+
+[[patch.unused]]
+name = "ctnd"
+version = "0.1.0"
+
+[[patch.unused]]
+name = "browser-coverage-runtime"
+version = "0.0.0"
+
+[[patch.unused]]
+name = "cpfl"
+version = "0.0.0"
+
+[[patch.unused]]
+name = "csrn"
+version = "0.1.0"
+
+[[patch.unused]]
+name = "browser-coverage-runtime"
+version = "0.0.0"
+
+[[patch.unused]]
+name = "cbrd"
+version = "0.1.0"
+
+[[patch.unused]]
+name = "crpt"
+version = "0.1.0"
+
+[[patch.unused]]
+name = "ckyh"
+version = "0.0.0"
+
+[[patch.unused]]
+name = "cpsd-fuzz"
+version = "0.0.0"
+
+[[patch.unused]]
+name = "cvlk"
+version = "0.1.0"
+
+[[patch.unused]]
+name = "browser-coverage-runtime"
+version = "0.0.0"
+
+[[patch.unused]]
+name = "csrh"
+version = "0.1.0"
+
+[[patch.unused]]
+name = "browser-coverage-runtime"
+version = "0.0.0"
+
+[[patch.unused]]
+name = "cfyr"
+version = "0.0.0"
+
+[[patch.unused]]
+name = "cfyr-browser-tests"
+version = "0.0.0"
+
+[[patch.unused]]
+name = "cmbr"
+version = "0.0.0"
+
+[[patch.unused]]
+name = "cfry"
+version = "0.1.0"
+
+[[patch.unused]]
+name = "crgs"
+version = "0.0.0"
+
+[[patch.unused]]
+name = "cswb"
+version = "0.1.0"
+
+[[patch.unused]]
+name = "cnrl"
+version = "0.0.0"
+
+[[patch.unused]]
+name = "cvtl"
+version = "0.1.0"
+
+[[patch.unused]]
+name = "cmeet"
+version = "0.1.0"
+
+[[patch.unused]]
+name = "cmeet-e2e"
+version = "0.0.0"
+
+[[patch.unused]]
+name = "cgrp"
+version = "0.1.0"
+
+[[patch.unused]]
+name = "cnbx"
+version = "0.1.0"
+
+[[patch.unused]]
+name = "clkp"
+version = "0.1.0"
+
+[[patch.unused]]
+name = "cnvy"
+version = "0.1.0"
+
+[[patch.unused]]
+name = "browser-coverage-runtime"
+version = "0.0.0"
+
+[[patch.unused]]
+name = "cvln"
+version = "0.0.0"
+
+[[patch.unused]]
+name = "browser-coverage-runtime"
+version = "0.0.0"
+
+[[patch.unused]]
+name = "cmsg"
+version = "0.2.0"
+
+[[patch.unused]]
+name = "cmsg-foyer-fixture"
+version = "0.0.0"
+
+[[patch.unused]]
+name = "cfrm"
+version = "0.2.0"
+
+[[patch.unused]]
+name = "ctrn"
+version = "0.1.0"
+
+[[patch.unused]]
+name = "browser-coverage-runtime"
+version = "0.0.0"
+
+[[patch.unused]]
+name = "cvlt"
+version = "0.0.0"
+
+[[patch.unused]]
+name = "cwvs"
+version = "0.1.0"
+
+[[patch.unused]]
+name = "browser-coverage-runtime"
+version = "0.0.0"
+
+[[patch.unused]]
+name = "cnvl"
+version = "0.0.0"
+
+[[patch.unused]]
+name = "browser-coverage-runtime"
+version = "0.0.0"
+
+[[patch.unused]]
+name = "clnk"
+version = "0.1.0"

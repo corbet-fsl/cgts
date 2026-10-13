@@ -13,6 +13,7 @@ fn extension_policy() -> ExtensionPolicy {
         change_token_cost: 1,
         deposit_delay_seconds: 60,
         minimum_deposit_batch: 2,
+        standing_policy_digest: [53; 32],
     }
 }
 fn scope() -> AccountProofScope {

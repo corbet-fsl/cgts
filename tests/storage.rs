@@ -407,7 +407,7 @@ async fn link_store_is_atomic_durable_and_isolated_by_community() {
     use cvch::link::{Link, LinkStore, Options, Token};
     let dir = tempfile::tempdir().unwrap();
     let path = dir.path().join("links.db");
-    let (token, _) = Token::issue([5; 32], [6; 32]).unwrap();
+    let (token, _) = Token::issue([5; 32], [6; 32], [5; 32]).unwrap();
     let options = Options::new(2, 500, None, false).unwrap();
     {
         let db = open(&path).await;
