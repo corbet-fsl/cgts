@@ -76,7 +76,7 @@ fn request(token: &cvch::link::Token, community: &str) -> cvch::link::Request {
         nonce: [3; cvch::link::NONCE_BYTES],
         handle: Some("@newcomer".into()),
     };
-    cvch::link::Request::new(token, community, &notice).unwrap()
+    cvch::link::Request::new(token, &notice).unwrap()
 }
 
 /// The request for a single-use link in `community`, valid until `expiry`
