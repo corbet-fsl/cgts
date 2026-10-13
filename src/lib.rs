@@ -5,6 +5,7 @@
 mod account;
 mod engine;
 pub mod gates;
+pub mod links;
 mod model;
 mod passport;
 pub mod pins;
@@ -15,6 +16,7 @@ pub use account::{AccountServiceRequest, AccountServiceResponse};
 pub use cblc;
 pub use crbk::{GateLevel, MembershipState, Snapshot};
 pub use engine::*;
+pub use links::LibsqlLinks;
 pub use model::*;
 pub use passport::*;
 pub use storage::{LibsqlStore, MemoryStore, SCHEMA, Storage};
