@@ -194,10 +194,7 @@ async fn forged_expired_cross_community_and_untrusted_contexts_fail() {
         forged,
         voucher("elsewhere", "not-burned", 2000),
         voucher("garden", "expired", 1100),
-        cvch::link::Request::new(
-            &cvch::link::Token::from_entropy([9; 32]).unwrap(),
-            &[1; cvch::link::NONCE_BYTES],
-        ),
+        voucher_unknown(),
     ] {
         assert!(matches!(
             keeper.run(context(&snapshot), &gate(), &input).await,
@@ -236,7 +233,6 @@ async fn forged_expired_cross_community_and_untrusted_contexts_fail() {
         gates::VoucherGate::new(
             "alias/provider",
             std::sync::Arc::new(cvch::link::MemoryLinks::default()),
-            std::sync::Arc::new(cvch::link::MemoryAllowance::default()),
         )
         .is_err()
     );
@@ -452,7 +448,7 @@ async fn voucher_link_admits_its_first_bearer_and_uses_coarse_policy_validity() 
 async fn sign_off_waits_then_admits_once_and_decline_spends_nothing() {
     let keeper = memory("garden");
     let snapshot = snapshot("garden", "cvch");
-    let (input, id) = signoff_voucher("garden", "multi");
+    let (input, manage) = signoff_voucher("garden", "multi");
     let waiting = Context {
         subject: "alice",
         ..context(&snapshot)
@@ -468,14 +464,11 @@ async fn sign_off_waits_then_admits_once_and_decline_spends_nothing() {
         Some(Error::Pending)
     );
     let decision = |member: &'static str, confirm: bool| {
-        let id = id.clone();
-        block_on(async move {
-            let vouching = cvch::link::Vouching {
-                store: &**links(),
-                allowance: &**allowance(),
-            };
-            vouching.decide(&id, "sponsor", member, confirm).await
-        })
+        block_on(cvch::link::LinkStore::update(
+            &**links(),
+            manage.id(),
+            |link| link.decide(&manage, member, confirm),
+        ))
     };
     assert_eq!(decision("alice", true), Ok(true));
     keeper.run(waiting, &gate(), &input).await.unwrap();
@@ -674,27 +667,21 @@ fn voucher_catalogue_definition_is_idempotent_and_keeps_host_configuration() {
 }
 
 #[tokio::test]
-async fn sponsor_handle_is_recorded_only_while_the_setting_is_on() {
+async fn gate_relays_the_sealed_notice_and_stores_no_issuer() {
     let keeper = memory("garden");
-    let mut snapshot = snapshot("garden", "cvch");
-    let recorded = |input: &cvch::link::Request| {
-        let id = cvch::link::LinkId::parse(&input.id).unwrap();
-        let links = block_on(cvch::link::LinkStore::issued_by(&**links(), "sponsor")).unwrap();
-        links
-            .into_iter()
-            .find(|link| link.id() == &id)
-            .unwrap()
-            .admitted()
-            .first()
-            .and_then(|entry| entry.sponsor.clone())
-    };
-    let on = voucher("garden", "visible", 2000);
-    keeper.run(context(&snapshot), &gate(), &on).await.unwrap();
-    assert_eq!(recorded(&on).as_deref(), Some("@sponsor"));
-    snapshot
-        .content
-        .insert(gates::VOUCHER_SPONSOR_VISIBLE.into(), false.into());
-    let off = voucher("garden", "hidden", 2000);
-    keeper.run(context(&snapshot), &gate(), &off).await.unwrap();
-    assert_eq!(recorded(&off), None);
+    let snapshot = snapshot("garden", "cvch");
+    let (input, manage) = signoff_voucher("garden", "relay");
+    assert_eq!(
+        keeper.run(context(&snapshot), &gate(), &input).await.err(),
+        Some(Error::Pending)
+    );
+    let view = block_on(cvch::link::LinkStore::update(
+        &**links(),
+        manage.id(),
+        |link| link.view(&manage),
+    ))
+    .unwrap();
+    assert_eq!(view.waiting.len(), 1);
+    assert_eq!(view.waiting[0].notice, input.notice);
+    assert!(!input.notice.contains("newcomer"));
 }

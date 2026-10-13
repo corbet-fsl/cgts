@@ -14,34 +14,26 @@ fn description(gate: &str, provider: &str, text: &str, input: &str) -> Descripto
     }
 }
 
-/// Voucher gate over cvch links. The service owns the link store and the
-/// allowance port; the redeeming member supplies only the link request. A
-/// link that waits for the issuer's sign-off is [`Error::Pending`]: the member
-/// presents the same link again to learn the decision.
-pub struct VoucherGate<S, A> {
+/// Voucher gate over cvch links. The service owns the link store; the
+/// redeeming member supplies only the link request, with a notice sealed to the
+/// issuer's device that this gate relays opaque. A link that waits for the
+/// issuer's sign-off is [`Error::Pending`]: the member presents the same link
+/// again to learn the decision. The gate never learns an issuer.
+pub struct VoucherGate<S> {
     provider: String,
     links: std::sync::Arc<S>,
-    allowance: std::sync::Arc<A>,
 }
 
-impl<S, A> VoucherGate<S, A> {
+impl<S> VoucherGate<S> {
     /// The provider names the voucher service; links come from trusted storage.
-    pub fn new(
-        provider: impl Into<String>,
-        links: std::sync::Arc<S>,
-        allowance: std::sync::Arc<A>,
-    ) -> Result<Self> {
+    pub fn new(provider: impl Into<String>, links: std::sync::Arc<S>) -> Result<Self> {
         let provider = provider.into();
         component(&provider)?;
-        Ok(Self {
-            provider,
-            links,
-            allowance,
-        })
+        Ok(Self { provider, links })
     }
 }
 
-impl<S: cvch::link::LinkStore, A: cvch::link::Allowance> Gate for VoucherGate<S, A> {
+impl<S: cvch::link::LinkStore> Gate for VoucherGate<S> {
     type Input = cvch::link::Request;
     fn descriptor(&self) -> Descriptor {
         description(
@@ -64,35 +56,26 @@ impl<S: cvch::link::LinkStore, A: cvch::link::Allowance> Gate for VoucherGate<S,
             .checked_add(days)
             .and_then(|days| days.checked_mul(86_400))
             .ok_or(Error::Invalid)?;
-        let (presentation, nonce) = request.parts().map_err(|_| Error::Refused)?;
-        let vouching = cvch::link::Vouching {
-            store: &*self.links,
-            allowance: &*self.allowance,
-        };
-        // Default visible when the platform rulebook predates the setting.
-        let visible = context.snapshot.content.get(VOUCHER_SPONSOR_VISIBLE) != Some(&false.into());
-        let outcome = vouching
-            .redeem(
-                &presentation,
-                &context.snapshot.community,
-                context.subject,
-                &nonce,
-                move |_| visible,
-                now,
-            )
+        let (presentation, notice) = request.parts().map_err(|_| Error::Refused)?;
+        let community = &context.snapshot.community;
+        let subject = context.subject;
+        let outcome = self
+            .links
+            .update(presentation.id(), |link| {
+                if link.community() != community {
+                    return Err(cvch::Error::Rejected);
+                }
+                link.apply(&presentation, subject, &notice, now)
+            })
             .await
             .map_err(|_| Error::Refused)?;
         match outcome {
             cvch::link::Outcome::Waiting => Err(Error::Pending),
             cvch::link::Outcome::Admitted | cvch::link::Outcome::Known => {
                 // The link store owns the use count; this claim makes the proof
-                // once-only per person and atomic with its commit, so a repeated
-                // presentation after sign-off is the only way to a second attempt
-                // and a failed commit can simply be retried.
-                let claim = Claim::new(
-                    "cvch",
-                    presentation.id().claim(context.subject).into_bytes(),
-                )?;
+                // once-only per person and atomic with its commit, so a failed
+                // commit can simply be retried.
+                let claim = Claim::new("cvch", presentation.id().claim(subject).into_bytes())?;
                 Ok(Proof::retained(expiry).with_claim(claim))
             }
         }
@@ -253,9 +236,10 @@ impl<V: cblc::accounting::AccountProofVerifier + Send + 'static> Gate for Record
 
 /// Resolved voucher gate validity, separate from the signed redemption deadline.
 pub const VOUCHER_VALIDITY_DAYS: &str = "voucher.validity_days";
-/// Whether an admission records the sponsor's community handle ("vouched for
-/// by ..."). Default on. Turning it off is immediate and final for earlier
-/// admissions; turning it on again affects only later ones.
+/// Whether the issuer's device signs and shares "vouched for by <handle>"
+/// (devices read it from the trust feed; the gate never sees an issuer).
+/// Default on. Turning it off is immediate and final for earlier admissions;
+/// turning it on again affects only later ones.
 pub const VOUCHER_SPONSOR_VISIBLE: &str = "voucher.sponsor_visible";
 
 /// Install the voucher catalogue entry without overriding a service definition.

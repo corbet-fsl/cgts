@@ -1064,10 +1064,11 @@ dependencies = [
 [[package]]
 name = "cvch"
 version = "0.2.1"
-source = "git+https://git.corbet.ch/corbet-foss/cvch.git?branch=vouchers-v01#e83b17f4201cdef6f84d517dd2f6b8d7239c21d6"
+source = "git+https://git.corbet.ch/corbet-foss/cvch.git?branch=vouchers-v01#a0bb825fe4e5f17a404fda771d0d09b3af56ddd6"
 dependencies = [
  "hex",
  "hmac 0.13.0",
+ "hpke",
  "serde",
  "sha2 0.11.0",
  "thiserror 2.0.21",
