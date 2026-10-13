@@ -48,8 +48,8 @@ presents it again for the decision. Retained validity comes from
 entry. The permanent opaque claim marker (hash of link id and member) and the
 result update commit atomically; failure rolls back both, so a person is proven
 once per link and an interrupted commit can be retried. The sponsor's community
-handle is recorded on the link only when the service's label callback returns
-one, that is, when the visibility setting is on. No link secret or redemption
+handle is recorded with an admission only when the service's visibility callback
+says so, that is, when the visibility setting is on. No link secret or redemption
 time is retained.
 
 ProfileGate delegates signed v2 profile and pin opening checks to cgrd. The

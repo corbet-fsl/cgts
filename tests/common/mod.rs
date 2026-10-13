@@ -81,7 +81,15 @@ pub fn voucher(community: &str, id: &str, expiry: u64) -> cvch::link::Request {
         .saturating_sub(1000)
         .clamp(1, cvch::link::MAXIMUM_DURATION);
     let options = cvch::link::Options::new(1, valid_for, None, false).unwrap();
-    let link = cvch::link::Link::issue(&token, community, "sponsor", options, 1000).unwrap();
+    let link = cvch::link::Link::issue(
+        &token.registration(),
+        community,
+        "sponsor",
+        Some("@sponsor"),
+        options,
+        1000,
+    )
+    .unwrap();
     // A repeated call finds the link already stored.
     let _ = block_on(cvch::link::LinkStore::insert(&**links(), link));
     cvch::link::Request::new(&token, &[3; cvch::link::NONCE_BYTES])
@@ -95,7 +103,15 @@ pub fn signoff_voucher(community: &str, id: &str) -> (cvch::link::Request, cvch:
     );
     let token = cvch::link::Token::from_entropy(seed.into()).unwrap();
     let options = cvch::link::Options::new(2, 100_000, None, false).unwrap();
-    let link = cvch::link::Link::issue(&token, community, "sponsor", options, 1000).unwrap();
+    let link = cvch::link::Link::issue(
+        &token.registration(),
+        community,
+        "sponsor",
+        Some("@sponsor"),
+        options,
+        1000,
+    )
+    .unwrap();
     let _ = block_on(cvch::link::LinkStore::insert(&**links(), link));
     (
         cvch::link::Request::new(&token, &[4; cvch::link::NONCE_BYTES]),
@@ -108,7 +124,7 @@ pub fn gate() -> TestGate {
         "local",
         links().clone(),
         allowance().clone(),
-        std::sync::Arc::new(|issuer| Some(format!("@{issuer}"))),
+        std::sync::Arc::new(|_| true),
     )
     .unwrap()
 }

@@ -14,9 +14,9 @@ fn description(gate: &str, provider: &str, text: &str, input: &str) -> Descripto
     }
 }
 
-/// Resolves the issuer's community handle for the record kept at admission,
-/// or `None` when the visibility setting is off. Called with the issuer's member id.
-pub type SponsorLabel = dyn Fn(&str) -> Option<String> + Send + Sync;
+/// Whether the issuer's community handle may be recorded with an admission,
+/// that is, whether the visibility setting is on. Called with the issuer's member id.
+pub type SponsorVisible = dyn Fn(&str) -> bool + Send + Sync;
 
 /// Voucher gate over cvch links. The service owns the link store and the
 /// allowance port; the redeeming member supplies only the link request. A
@@ -26,7 +26,7 @@ pub struct VoucherGate<S, A> {
     provider: String,
     links: std::sync::Arc<S>,
     allowance: std::sync::Arc<A>,
-    label: std::sync::Arc<SponsorLabel>,
+    visible: std::sync::Arc<SponsorVisible>,
 }
 
 impl<S, A> VoucherGate<S, A> {
@@ -35,7 +35,7 @@ impl<S, A> VoucherGate<S, A> {
         provider: impl Into<String>,
         links: std::sync::Arc<S>,
         allowance: std::sync::Arc<A>,
-        label: std::sync::Arc<SponsorLabel>,
+        visible: std::sync::Arc<SponsorVisible>,
     ) -> Result<Self> {
         let provider = provider.into();
         component(&provider)?;
@@ -43,7 +43,7 @@ impl<S, A> VoucherGate<S, A> {
             provider,
             links,
             allowance,
-            label,
+            visible,
         })
     }
 }
@@ -76,14 +76,14 @@ impl<S: cvch::link::LinkStore, A: cvch::link::Allowance> Gate for VoucherGate<S,
             store: &*self.links,
             allowance: &*self.allowance,
         };
-        let label = self.label.clone();
+        let visible = self.visible.clone();
         let outcome = vouching
             .redeem(
                 &presentation,
                 &context.snapshot.community,
                 context.subject,
                 &nonce,
-                move |issuer| label(issuer),
+                move |issuer| visible(issuer),
                 now,
             )
             .await

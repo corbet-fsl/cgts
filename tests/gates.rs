@@ -237,7 +237,7 @@ async fn forged_expired_cross_community_and_untrusted_contexts_fail() {
             "alias/provider",
             std::sync::Arc::new(cvch::link::MemoryLinks::default()),
             std::sync::Arc::new(cvch::link::MemoryAllowance::default()),
-            std::sync::Arc::new(|_| None),
+            std::sync::Arc::new(|_| false),
         )
         .is_err()
     );
