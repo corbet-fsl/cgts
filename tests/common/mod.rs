@@ -75,6 +75,7 @@ fn request(token: &cvch::link::Token, community: &str) -> cvch::link::Request {
         member: "alice".into(),
         nonce: [3; cvch::link::NONCE_BYTES],
         handle: Some("@newcomer".into()),
+        key_package: Vec::new(),
     };
     cvch::link::Request::new(token, &notice).unwrap()
 }
