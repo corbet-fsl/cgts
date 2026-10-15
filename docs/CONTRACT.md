@@ -26,7 +26,7 @@ gate metadata has no authenticated proof time.
 
 `verify_passport` calls the real stateful cpsd BBS+ verifier and consumes its
 challenge before returning `VerifiedPassport`. A bare pseudonym is insufficient.
-The service supplies the current authenticated global epoch; suspension therefore
+The service supplies the current authenticated global epoch; a permanent block therefore
 invalidates the old passport at the next verification/renewal. The witness binds
 global gates to that verified community pseudonym, the action and cplc's effective
 community epoch. It requires a shared cohort expiry at a UTC-day boundary.
