@@ -44,18 +44,8 @@ impl<S: cvch::link::LinkStore> Gate for VoucherGate<S> {
         )
     }
     async fn verify(&self, context: Context<'_>, request: &Self::Input) -> Result<Proof> {
-        let days = context
-            .snapshot
-            .content
-            .get(VOUCHER_VALIDITY_DAYS)
-            .and_then(serde_json::Value::as_i64)
-            .filter(|days| (1..=365).contains(days))
-            .ok_or(Error::Policy)?;
+        let expiry = voucher_expiry(context)?;
         let now = u64::try_from(context.now).map_err(|_| Error::Invalid)?;
-        let expiry = (context.now / 86_400)
-            .checked_add(days)
-            .and_then(|days| days.checked_mul(86_400))
-            .ok_or(Error::Invalid)?;
         let (presentation, notice) = request.parts().map_err(|_| Error::Refused)?;
         let community = &context.snapshot.community;
         let subject = context.subject;
@@ -79,6 +69,73 @@ impl<S: cvch::link::LinkStore> Gate for VoucherGate<S> {
                 Ok(Proof::retained(expiry).with_claim(claim))
             }
         }
+    }
+}
+
+/// End of the voucher fact's validity: the configured number of whole days
+/// after the day of the check.
+fn voucher_expiry(context: Context<'_>) -> Result<i64> {
+    let days = context
+        .snapshot
+        .content
+        .get(VOUCHER_VALIDITY_DAYS)
+        .and_then(serde_json::Value::as_i64)
+        .filter(|days| (1..=365).contains(days))
+        .ok_or(Error::Policy)?;
+    (context.now / 86_400)
+        .checked_add(days)
+        .and_then(|days| days.checked_mul(86_400))
+        .ok_or(Error::Invalid)
+}
+
+/// The founder's voucher step (Julian, L1352). The recorded creator of a new
+/// community is not gated by its voucher gate: her verified global passport
+/// proves she was admitted somewhere on the platform, without revealing where.
+/// It yields the same retained `cvch` fact, under the community's voucher
+/// provider, that a redeemed link yields, so every later decision (admission,
+/// credential, renewal) treats the founder like a vouched member. The legal veto
+/// and every other gate still apply. The caller must first have matched the
+/// member to the recorded creation commitment; no one else may reach it.
+pub struct FoundingVoucher {
+    provider: String,
+}
+
+impl FoundingVoucher {
+    /// The voucher gate as this snapshot enables it, or `None` when the community
+    /// does not use it (nothing to stand in for). With several enabled providers
+    /// the first in key order is used.
+    pub fn for_snapshot(snapshot: &Snapshot) -> Option<Self> {
+        let gate = crbk::gate_key(GateLevel::Community, "cvch");
+        if snapshot.content.get(&gate).and_then(|v| v.as_bool()) != Some(true) {
+            return None;
+        }
+        let prefix = crbk::provider_key(GateLevel::Community, "cvch", "");
+        snapshot
+            .content
+            .range(prefix.clone()..)
+            .take_while(|(key, _)| key.starts_with(&prefix))
+            .find(|(key, value)| key.len() > prefix.len() && value.as_bool() == Some(true))
+            .map(|(key, _)| Self {
+                provider: key[prefix.len()..].to_owned(),
+            })
+            .filter(|founding| component(&founding.provider).is_ok())
+    }
+}
+
+impl Gate for FoundingVoucher {
+    type Input = VerifiedPassport;
+    fn descriptor(&self) -> Descriptor {
+        description(
+            "cvch",
+            &self.provider,
+            "Founder: the verified global passport stands in for a voucher.",
+            "cpsd.Presentation",
+        )
+    }
+    async fn verify(&self, context: Context<'_>, passport: &VerifiedPassport) -> Result<Proof> {
+        // Bound to this community, subject and check time, and still valid.
+        passport.gates(context)?;
+        Ok(Proof::retained(voucher_expiry(context)?))
     }
 }
 
