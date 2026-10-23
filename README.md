@@ -53,7 +53,7 @@ key. `Storage` has real `MemoryStore` and `LibsqlStore` implementations. A vouch
 receipt and result commit atomically. Replays are refused, including after reopen.
 
 CI runs `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings`,
-`cargo test` and release tests. No Cargo commands run on the workstation.
+`cargo test` and release tests.
 Ignored real-Turso probes require explicit operator authorization before selection
 and read TURSO_URL/TURSO_TOKEN only when both are nonempty. They write isolated
 test rows to a disposable database. Credentials are never

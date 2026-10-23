@@ -101,7 +101,7 @@ v2 profile fixtures, real BBS+ blind issuance and authenticated presentation,
 legal vetoes and compile-fail capability boundaries. It also rejects floating or
 duplicated corbet dependency revisions in Cargo.lock and cargo metadata. The
 live Turso probes are ignored by default and require explicit authorization,
-selection and disposable database credentials. No Cargo runs on the workstation.
+selection and disposable database credentials.
 
 Checked receipts bind the complete resolved setting values and authenticated
 publication issuance time as well as revision/epoch. Reusing a revision while
