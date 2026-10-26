@@ -1,7 +1,7 @@
 #![allow(dead_code)]
-use cgts::legal_storage::{LibsqlStore, SCHEMA};
+use cgts::legal_storage::{LibsqlStore, SCHEMA, SCOPE_SCHEMA};
 
-use clbs::{Error, Order, OrderKind, Result, SignedOrder, Verifier};
+use clbs::{Error, Order, OrderKind, Result, Scope, SignedOrder, Verifier};
 use crlt::{Config, Db, Migration};
 use ed25519_dalek::{Signature, Signer, SigningKey, VerifyingKey};
 use tempfile::TempDir;
@@ -69,6 +69,7 @@ pub fn legal(id: &str) -> Order {
         kind: OrderKind::Legal {
             authority: "court".into(),
         },
+        scope: Scope::Member,
     }
 }
 
@@ -92,15 +93,19 @@ pub fn sign(order: Order) -> SignedOrder {
     SignedOrder { order, proof }
 }
 
+pub fn migrations() -> Vec<crlt::Migration<'static>> {
+    vec![
+        Migration::new(1, "clbs", SCHEMA),
+        Migration::new(2, "clbs-scope", SCOPE_SCHEMA),
+    ]
+}
+
 pub async fn open(path: &std::path::Path) -> Db {
     let url = format!("file://{}", path.display());
     let db = Db::open(Config::new(url, "")).await.unwrap();
     // The migration is idempotent: it applies on a fresh database and is a no-op on reopening.
-    let applied = db
-        .migrate(&[Migration::new(1, "clbs", SCHEMA)])
-        .await
-        .unwrap();
-    assert!(applied <= 1);
+    let applied = db.migrate(&migrations()).await.unwrap();
+    assert!(applied <= 2);
     db
 }
 

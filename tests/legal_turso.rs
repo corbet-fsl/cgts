@@ -2,7 +2,7 @@
 #[path = "legal_common/mod.rs"]
 mod common;
 
-use cgts::legal_storage::{LibsqlStore, SCHEMA};
+use cgts::legal_storage::{LibsqlStore, SCHEMA, SCOPE_SCHEMA};
 use clbs::{Append, Gate, State};
 use common::{TestVerifier, legal, sign};
 use crlt::{Config, Db, Migration};
@@ -22,9 +22,12 @@ async fn optional_real_turso_round_trip() {
     let db = Db::open(Config::new(url, token))
         .await
         .unwrap_or_else(|_| panic!("Turso connection failed"));
-    db.migrate(&[Migration::new(1, "clbs", SCHEMA)])
-        .await
-        .unwrap_or_else(|_| panic!("Turso migration failed; use a disposable database"));
+    db.migrate(&[
+        Migration::new(1, "clbs", SCHEMA),
+        Migration::new(2, "clbs-scope", SCOPE_SCHEMA),
+    ])
+    .await
+    .unwrap_or_else(|_| panic!("Turso migration failed; use a disposable database"));
     let unique = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap()

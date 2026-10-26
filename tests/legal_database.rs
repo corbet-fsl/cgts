@@ -1,11 +1,11 @@
 //! Real host-owned database persistence, isolation, concurrency and failure boundaries.
-use cgts::legal_storage::{LibsqlStore, SCHEMA};
+use cgts::legal_storage::LibsqlStore;
 #[path = "legal_common/mod.rs"]
 mod common;
 
 use clbs::{Append, Counts, Error, Gate, MemoryStore, State, Store};
 use common::{TestVerifier, ban, legal, sign};
-use crlt::{Config, Db, Migration};
+use crlt::{Config, Db};
 
 #[tokio::test]
 async fn reopening_preserves_permanent_orders_and_self_bans() {
@@ -14,12 +14,7 @@ async fn reopening_preserves_permanent_orders_and_self_bans() {
     let url = format!("file://{}", path.display());
     {
         let db = common::open(&path).await;
-        assert_eq!(
-            db.migrate(&[Migration::new(1, "clbs", SCHEMA)])
-                .await
-                .unwrap(),
-            0
-        );
+        assert_eq!(db.migrate(&common::migrations()).await.unwrap(), 0);
         let gate = Gate::new(
             LibsqlStore::new(&db, "community-a").unwrap(),
             TestVerifier::new("community-a"),
@@ -31,12 +26,7 @@ async fn reopening_preserves_permanent_orders_and_self_bans() {
         }
     }
     let db = Db::open(Config::new(url, "")).await.unwrap();
-    assert_eq!(
-        db.migrate(&[Migration::new(1, "clbs", SCHEMA)])
-            .await
-            .unwrap(),
-        0
-    );
+    assert_eq!(db.migrate(&common::migrations()).await.unwrap(), 0);
     let gate = Gate::new(
         LibsqlStore::new(&db, "community-a").unwrap(),
         TestVerifier::new("community-a"),
@@ -65,7 +55,7 @@ async fn reopening_preserves_permanent_orders_and_self_bans() {
         .await
         .unwrap();
     assert_eq!(rows.len(), 2);
-    assert_eq!(rows[0].columns().len(), 7);
+    assert_eq!(rows[0].columns().len(), 8);
     for column in rows[0].columns() {
         assert!(
             ![
@@ -135,9 +125,7 @@ async fn concurrent_retries_commit_one_record() {
     let mut config = Config::new(url, "");
     config.max_connections = 2;
     let db = Db::open(config).await.unwrap();
-    db.migrate(&[Migration::new(1, "clbs", SCHEMA)])
-        .await
-        .unwrap();
+    db.migrate(&common::migrations()).await.unwrap();
     let store = LibsqlStore::new(&db, "community-a").unwrap();
     let mut tasks = tokio::task::JoinSet::new();
     for _ in 0..8 {
@@ -172,9 +160,7 @@ async fn missing_schema_and_corrupt_metadata_fail_closed() {
         gate.record_legal(&sign(legal("missing"))).await,
         Err(Error::Storage)
     );
-    db.migrate(&[Migration::new(1, "clbs", SCHEMA)])
-        .await
-        .unwrap();
+    db.migrate(&common::migrations()).await.unwrap();
     assert_eq!(gate.counts().await.unwrap(), Counts::default());
     gate.record_legal(&sign(legal("corrupt"))).await.unwrap();
     // Out-of-band writes are trusted administration; invalid data must still fail closed.
@@ -209,10 +195,7 @@ async fn row_limits_refuse_partial_verdicts_and_snapshots() {
     let mut config = Config::new(format!("file://{}", path.display()), "");
     config.max_rows = 1;
     let limited_db = Db::open(config).await.unwrap();
-    limited_db
-        .migrate(&[Migration::new(1, "clbs", SCHEMA)])
-        .await
-        .unwrap();
+    limited_db.migrate(&common::migrations()).await.unwrap();
     let limited = Gate::new(
         LibsqlStore::new(&limited_db, "community-a").unwrap(),
         TestVerifier::new("community-a"),

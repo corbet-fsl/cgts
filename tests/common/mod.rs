@@ -67,7 +67,9 @@ fn token_for(label: &str, community: &str, id: &str) -> cvch::link::Token {
         )
         .as_bytes(),
     );
-    cvch::link::Token::issue(seed.into(), [7; 32], [5; 32]).unwrap().0
+    cvch::link::Token::issue(seed.into(), [7; 32], [5; 32])
+        .unwrap()
+        .0
 }
 
 fn request(token: &cvch::link::Token, community: &str) -> cvch::link::Request {
@@ -150,6 +152,7 @@ pub fn order(community: &str) -> clbs::SignedOrder {
         kind: clbs::OrderKind::Legal {
             authority: "test-court".into(),
         },
+        scope: clbs::Scope::Member,
     };
     let proof = SigningKey::from_bytes(&[9; 32])
         .sign(&order.signing_payload().unwrap())
@@ -175,6 +178,7 @@ pub async fn migrate(db: &crlt::Db) {
     let migrations = [
         crlt::Migration::new(1, "gates", SCHEMA),
         crlt::Migration::new(2, "legal", cgts::legal_storage::SCHEMA),
+        crlt::Migration::new(3, "clbs-scope", cgts::legal_storage::SCOPE_SCHEMA),
     ];
     db.migrate(&migrations).await.unwrap();
     assert_eq!(db.migrate(&migrations).await.unwrap(), 0);

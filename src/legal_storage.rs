@@ -8,14 +8,18 @@ use clbs::{Append, Counts, Error, Order, OrderKind, Record, Result, Revocation, 
 /// The composition root assigns its version and applies it before constructing stores.
 pub const SCHEMA: &str = include_str!("legal_schema.sql");
 
-const BY_ID: &str =
-    "SELECT id, subject, reference, entered_by, kind, authority FROM clbs_orders WHERE id = ?1";
-const SELF_BAN: &str = "SELECT id, subject, reference, entered_by, kind, authority FROM clbs_orders WHERE subject = ?1 AND kind = 'self_ban' LIMIT 1";
-const ORDERS: &str = "SELECT id, subject, reference, entered_by, kind, authority FROM clbs_orders WHERE subject = ?1 ORDER BY id";
-const REVOCATIONS: &str =
-    "SELECT id, subject, reference, entered_by, kind, authority FROM clbs_orders ORDER BY id";
+/// Additive scope migration, applied after [`SCHEMA`]. History is immutable,
+/// so the scope column arrives in its own migration: existing rows keep their
+/// meaning and read back as member scope, which is exactly what they are
+/// (community scope did not exist before this migration).
+pub const SCOPE_SCHEMA: &str = "ALTER TABLE clbs_orders ADD COLUMN scope TEXT NOT NULL DEFAULT 'member' CHECK (scope IN ('member', 'community'))";
+
+const BY_ID: &str = "SELECT id, subject, reference, entered_by, kind, authority, scope FROM clbs_orders WHERE id = ?1";
+const SELF_BAN: &str = "SELECT id, subject, reference, entered_by, kind, authority, scope FROM clbs_orders WHERE subject = ?1 AND kind = 'self_ban' LIMIT 1";
+const ORDERS: &str = "SELECT id, subject, reference, entered_by, kind, authority, scope FROM clbs_orders WHERE subject = ?1 ORDER BY id";
+const REVOCATIONS: &str = "SELECT id, subject, reference, entered_by, kind, authority, scope FROM clbs_orders ORDER BY id";
 const COUNTS: &str = "SELECT COUNT(CASE WHEN kind = 'legal' THEN 1 END), COUNT(CASE WHEN kind = 'self_ban' THEN 1 END) FROM clbs_orders";
-const INSERT: &str = "INSERT INTO clbs_orders (id, subject, reference, entered_by, kind, authority) VALUES (?1, ?2, ?3, ?4, ?5, ?6)";
+const INSERT: &str = "INSERT INTO clbs_orders (id, subject, reference, entered_by, kind, authority, scope) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)";
 
 /// libSQL persistence through crlt's scoped, index-checked database facade.
 /// Deploy one database per community. Clones share the underlying database pool.
@@ -48,6 +52,11 @@ impl LibsqlStore {
             ("self_ban", Value::Null) => OrderKind::SelfBan,
             _ => return Err(Error::Storage),
         };
+        let scope = match row.get_str(6).map_err(db_error)? {
+            "member" => clbs::Scope::Member,
+            "community" => clbs::Scope::Community,
+            _ => return Err(Error::Storage),
+        };
         let order = Order {
             community: self.community.clone(),
             id: row.get_str(0).map_err(db_error)?.into(),
@@ -55,6 +64,7 @@ impl LibsqlStore {
             reference: row.get_str(2).map_err(db_error)?.into(),
             entered_by: row.get_str(3).map_err(db_error)?.into(),
             kind,
+            scope,
         };
         Record::restore_trusted(order).map_err(|_| Error::Storage)
     }
@@ -95,6 +105,10 @@ impl LibsqlStore {
             OrderKind::Legal { authority } => ("legal", Some(authority.clone())),
             OrderKind::SelfBan => ("self_ban", None),
         };
+        let scope = match order.scope {
+            clbs::Scope::Member => "member",
+            clbs::Scope::Community => "community",
+        };
         tx.execute(
             INSERT,
             params![
@@ -103,7 +117,8 @@ impl LibsqlStore {
                 order.reference.clone(),
                 order.entered_by.clone(),
                 kind,
-                authority
+                authority,
+                scope
             ],
         )
         .await

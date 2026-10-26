@@ -1,7 +1,7 @@
 //! Real verified metadata and caller-owned notices share one scoped transaction.
 #[path = "legal_common/mod.rs"]
 mod common;
-use cgts::legal_storage::{LibsqlStore, SCHEMA};
+use cgts::legal_storage::{LibsqlStore, SCHEMA, SCOPE_SCHEMA};
 use clbs::{Append, Error, Gate, MemoryStore, Record, Store};
 use common::{TestVerifier, legal, sign};
 
@@ -17,6 +17,7 @@ async fn fixture() -> (tempfile::TempDir, crlt::Db, LibsqlStore, Record) {
     db.migrate(&[
         crlt::Migration::new(1, "legal", SCHEMA),
         crlt::Migration::new(2, "notice", NOTICE_SCHEMA),
+        crlt::Migration::new(3, "clbs-scope", SCOPE_SCHEMA),
     ])
     .await
     .unwrap();
@@ -67,6 +68,7 @@ async fn verified_order_and_notice_commit_once_and_survive_reopening() {
         db.migrate(&[
             crlt::Migration::new(1, "legal", SCHEMA),
             crlt::Migration::new(2, "notice", NOTICE_SCHEMA),
+            crlt::Migration::new(3, "clbs-scope", SCOPE_SCHEMA),
         ])
         .await
         .unwrap(),
