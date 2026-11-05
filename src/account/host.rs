@@ -26,6 +26,9 @@ pub enum HostRequest {
         expected: EnrollmentExpected,
         /// Same source owner retained through the actual prepare writer.
         authority: Arc<dyn cblc::storage::CommitAuthority>,
+        /// The host device registry, asked at build time: a delegation whose device is
+        /// revoked or removed is left out of the new slot even while it is unexpired.
+        devices: Arc<dyn cblc::current_device::CurrentDevices>,
     },
     /// Consume only the actual common producer's nonconstructible capability.
     InstallCheckpoint {

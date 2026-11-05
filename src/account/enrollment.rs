@@ -50,9 +50,10 @@ where
             HostRequest::PrepareCheckpoint {
                 expected,
                 authority,
+                devices,
             } => self
                 .enrollment
-                .prepare_checkpoint(expected.borrowed(), authority)
+                .prepare_checkpoint(expected.borrowed(), authority, &*devices)
                 .map(HostResponse::PendingCheckpoint),
             HostRequest::InstallCheckpoint { pending, authority } => self
                 .ledger
