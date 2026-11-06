@@ -49,6 +49,8 @@ for case, expected in (("success", 0), ("coverage_fails", 7), ("probe_compiles",
             stub.chmod(0o755)
         (root / ".ci").mkdir()
         (root / ".ci/verify.sh").write_bytes(SOURCE)
+        # The script advances our own crates through cargo; the scenario stubs cargo, so a no-op stands in.
+        (root / ".ci/update-our-crates.sh").write_text("#!/usr/bin/env bash\nexit 0\n")
         (root / ".ci/development_gate_probe.rs").write_bytes(b"fixture probe\n")
         artifacts = root / "artifacts"
         artifacts.mkdir()
