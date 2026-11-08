@@ -1,5 +1,5 @@
 //! Real atomic memory and libSQL storage round trips and failure cases.
-mod common;
+use crate::common;
 use cgts::*;
 use common::*;
 

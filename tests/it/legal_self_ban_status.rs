@@ -1,6 +1,5 @@
 //! A permanent self-ban receipt is exact, scoped to its community, and survives reopening storage.
-#[path = "legal_common/mod.rs"]
-mod common;
+use crate::legal_common as common;
 use cgts::legal_storage::LibsqlStore;
 use clbs::Gate;
 use common::*;

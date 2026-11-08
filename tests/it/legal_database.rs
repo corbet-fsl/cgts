@@ -1,7 +1,6 @@
 //! Real host-owned database persistence, isolation, concurrency and failure boundaries.
+use crate::legal_common as common;
 use cgts::legal_storage::LibsqlStore;
-#[path = "legal_common/mod.rs"]
-mod common;
 
 use clbs::{Append, Counts, Error, Gate, MemoryStore, State, Store};
 use common::{TestVerifier, ban, legal, sign};

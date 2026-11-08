@@ -1,5 +1,5 @@
 //! Signed voucher, rulebook and mandatory legal-veto integration tests.
-mod common;
+use crate::common;
 use cgts::*;
 use common::*;
 

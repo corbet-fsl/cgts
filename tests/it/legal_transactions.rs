@@ -1,6 +1,5 @@
 //! Real verified metadata and caller-owned notices share one scoped transaction.
-#[path = "legal_common/mod.rs"]
-mod common;
+use crate::legal_common as common;
 use cgts::legal_storage::{LibsqlStore, SCHEMA, SCOPE_SCHEMA};
 use clbs::{Append, Error, Gate, MemoryStore, Record, Store};
 use common::{TestVerifier, legal, sign};

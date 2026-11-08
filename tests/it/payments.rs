@@ -1,5 +1,5 @@
 //! Payment facts cross the gate boundary without retaining provider data.
-mod common;
+use crate::common;
 use cgts::*;
 use common::*;
 use cpmt::payments as p;

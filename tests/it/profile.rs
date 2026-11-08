@@ -1,5 +1,5 @@
 //! Actual Guard profile verification through the facade, using public test keys.
-mod common;
+use crate::common;
 use cgts::*;
 use common::*;
 

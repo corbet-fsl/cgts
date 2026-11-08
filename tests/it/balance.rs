@@ -1,5 +1,5 @@
 //! Real issuer signatures and fail-closed balance-leaf integration.
-mod common;
+use crate::common;
 use cblc::{accounting::*, extensions::*};
 use cgts::*;
 use common::*;

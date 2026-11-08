@@ -1,5 +1,5 @@
 //! Real blind issuance, authenticated presentation, replay and scope boundaries.
-mod common;
+use crate::common;
 use cgts::*;
 use common::*;
 use rand::{SeedableRng, rngs::StdRng};
