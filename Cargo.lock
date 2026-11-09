@@ -4971,7 +4971,7 @@ version = "0.0.0"
 [[patch.unused]]
 name = "crlt"
 version = "0.0.0"
-source = "git+https://git.corbet.ch/corbet-foss/crlt?branch=main#3db630da2dfd176bc665d1617b89a7c0c4ebb2c9"
+source = "git+https://git.corbet.ch/corbet-libre/crlt.git?branch=main#3db630da2dfd176bc665d1617b89a7c0c4ebb2c9"
 
 [[patch.unused]]
 name = "cgbl"
@@ -4996,7 +4996,7 @@ version = "0.0.0"
 [[patch.unused]]
 name = "cpns"
 version = "0.0.0"
-source = "git+https://git.corbet.ch/corbet-foss/cpns?branch=main#9470e80c458c7769a0ddc33fb1c25fc4fa6113b1"
+source = "git+https://git.corbet.ch/corbet-libre/cpns.git?branch=main#9470e80c458c7769a0ddc33fb1c25fc4fa6113b1"
 
 [[patch.unused]]
 name = "ctcs"
