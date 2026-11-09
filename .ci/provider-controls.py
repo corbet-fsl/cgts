@@ -6,8 +6,9 @@ import re
 import subprocess
 
 SOURCE = 'src/engine.rs'
-TARGET = 'gates'
-TEST = 'distinct_signed_voucher_providers_coexist_in_memory_and_sql'
+TARGET = 'it'
+TEST = 'gates::distinct_signed_voucher_providers_coexist_in_memory_and_sql'
+PANIC = 'tests/it/gates.rs'
 CONTROLS = ((b'                gate.result.gate.clone(),\n                gate.result.provider.clone(),', b'                gate.result.gate.clone(),', 'distinct authenticated providers must coexist'), (b'                    || old.result.provider != gate.result.provider', b'', 'fresh evidence must preserve other authenticated providers'))
 
 
@@ -36,8 +37,8 @@ def assertion(status, output, marker):
     return (status == 101 and exact_result(output, "FAILED")
             and "test result: FAILED. 0 passed; 1 failed; 0 ignored;" in output
             and re.search(r"thread '" + re.escape(TEST)
-                          + r"'(?: \([0-9]+\))? panicked at tests/"
-                          + re.escape(TARGET) + r"\.rs:[0-9]+:[0-9]+:", output)
+                          + r"'(?: \([0-9]+\))? panicked at "
+                          + re.escape(PANIC) + r":[0-9]+:[0-9]+:", output)
             and marker in output and "error[E" not in output
             and "could not compile" not in output)
 

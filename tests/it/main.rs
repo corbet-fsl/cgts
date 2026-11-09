@@ -4,8 +4,10 @@
 //! executable instead of one per file. The test names keep their module prefix
 //! (`<name>::<test>`); `tests/internal` still holds the library's `#[path]` unit tests.
 //!
-//! `tests/account_service.rs` stays its own target: `cmeet/ci/land-tests.txt` marks it
-//! `bot` (needs original authenticated native artifact fixtures), so the land never runs it.
+//! `account_service` is a module here too; its 12 tests are the `bot` tier of
+//! `cmeet/ci/land-tests.txt` (they need the original authenticated CBLC_PROOF_DIRECTORY and
+//! CBLC_BB artifacts), so the land skips them by name and the per-repo CI runs them.
+mod account_service;
 mod balance;
 mod claim_transactions;
 #[path = "../common/mod.rs"]

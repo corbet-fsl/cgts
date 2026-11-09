@@ -3,7 +3,6 @@
 //! Requires existing authenticated CBLC_PROOF_DIRECTORY and CBLC_BB fixture inputs.
 #[path = "account_service/authority.rs"]
 mod authority;
-mod common;
 #[path = "account_service/host.rs"]
 mod host;
 #[path = "account_service/native.rs"]
@@ -12,9 +11,9 @@ mod native;
 mod shutdown;
 #[path = "account_service/storage.rs"]
 mod storage;
+use crate::common::*;
 use cblc::{accounting::*, accounting_ledger::*, accounting_service::*, admission::*};
 use cgts::*;
-use common::*;
 use data_encoding::BASE64URL_NOPAD as B64;
 use ed25519_dalek::{Signer, SigningKey};
 use sha2::{Digest, Sha256};
