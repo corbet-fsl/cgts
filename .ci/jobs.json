@@ -2,7 +2,7 @@
   "schema": 1,
   "generator": "ccid render v1",
   "tool_revision": "",
-  "manifest_sha256": "6c3aee525daf0e53abcf05306ef87dcf9d507bd9620a9d433d453bea399bcd3f",
+  "manifest_sha256": "b8a90d17b181fe8be29f8f40786ba69a3ec429a0e0a8d363d1e8cf894e63af63",
   "jobs": {
     "resolve-dependencies": {
       "job": "resolve-dependencies",
