@@ -11,7 +11,6 @@ export CARGO_TERM_COLOR="${CARGO_TERM_COLOR:-always}"
 python3 .ci/test-report-retention.py
 python3 .ci/test-provider-controls.py
 rustc --version
-bash .ci/update-our-crates.sh
 cargo fmt --all --check
 node --test .github/check-pins.test.mjs
 cargo metadata --locked --format-version 1 > dependency-metadata.json
