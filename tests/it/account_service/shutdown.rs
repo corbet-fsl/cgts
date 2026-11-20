@@ -2,6 +2,7 @@
 use super::*;
 
 #[tokio::test(flavor = "multi_thread")]
+#[ignore = "needs the authenticated native fixtures: CBLC_PROOF_DIRECTORY and CBLC_BB (cblc proof pipeline); run with --ignored where they exist"]
 async fn native_shutdown_reaches_the_actual_verifier_clones_after_a_genuine_proof_succeeds() {
     let directory = std::path::PathBuf::from(
         std::env::var_os("CBLC_PROOF_DIRECTORY")
@@ -58,6 +59,7 @@ async fn native_shutdown_reaches_the_actual_verifier_clones_after_a_genuine_proo
 }
 
 #[tokio::test(flavor = "multi_thread")]
+#[ignore = "needs the authenticated native fixtures: CBLC_PROOF_DIRECTORY and CBLC_BB (cblc proof pipeline); run with --ignored where they exist"]
 async fn cancelled_shutdown_waiters_still_join_the_same_worker_before_releasing_its_lease() {
     let dir = tempfile::tempdir().unwrap();
     let (entered, started) = mpsc::channel();
@@ -155,6 +157,7 @@ async fn cancelled_shutdown_waiters_still_join_the_same_worker_before_releasing_
 }
 
 #[tokio::test(flavor = "multi_thread")]
+#[ignore = "needs the authenticated native fixtures: CBLC_PROOF_DIRECTORY and CBLC_BB (cblc proof pipeline); run with --ignored where they exist"]
 async fn generic_service_shutdown_drains_without_claiming_native_preemption() {
     let dir = tempfile::tempdir().unwrap();
     let keeper = memory("garden")

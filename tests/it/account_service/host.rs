@@ -2,6 +2,7 @@
 use super::*;
 
 #[tokio::test(flavor = "multi_thread")]
+#[ignore = "needs the authenticated native fixtures: CBLC_PROOF_DIRECTORY and CBLC_BB (cblc proof pipeline); run with --ignored where they exist"]
 async fn host_tuning_returns_the_same_lease_and_member_work_sees_the_same_owner() {
     let dir = tempfile::tempdir().unwrap();
     let keeper = memory("garden")
@@ -68,6 +69,7 @@ async fn host_tuning_returns_the_same_lease_and_member_work_sees_the_same_owner(
 }
 
 #[tokio::test(flavor = "multi_thread")]
+#[ignore = "needs the authenticated native fixtures: CBLC_PROOF_DIRECTORY and CBLC_BB (cblc proof pipeline); run with --ignored where they exist"]
 async fn cancelled_host_operation_keeps_lease_then_reconciles_the_original_native_revision() {
     let dir = tempfile::tempdir().unwrap();
     let (entered, observed) = mpsc::channel();
@@ -132,6 +134,7 @@ async fn cancelled_host_operation_keeps_lease_then_reconciles_the_original_nativ
 }
 
 #[tokio::test(flavor = "multi_thread")]
+#[ignore = "needs the authenticated native fixtures: CBLC_PROOF_DIRECTORY and CBLC_BB (cblc proof pipeline); run with --ignored where they exist"]
 async fn absent_native_publication_capability_never_fabricates_bootstrap_or_record_material() {
     let dir = tempfile::tempdir().unwrap();
     let keeper = memory("garden")

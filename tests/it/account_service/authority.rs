@@ -15,6 +15,7 @@ impl cblc::storage::CommitAuthority for RefusedOwner {
 }
 
 #[tokio::test(flavor = "multi_thread")]
+#[ignore = "needs the authenticated native fixtures: CBLC_PROOF_DIRECTORY and CBLC_BB (cblc proof pipeline); run with --ignored where they exist"]
 async fn member_queue_reaches_actual_final_authority_before_signed_status_release() {
     let dir = tempfile::tempdir().unwrap();
     let keeper = memory("garden")
@@ -62,6 +63,7 @@ async fn member_queue_reaches_actual_final_authority_before_signed_status_releas
 }
 
 #[tokio::test(flavor = "multi_thread")]
+#[ignore = "needs the authenticated native fixtures: CBLC_PROOF_DIRECTORY and CBLC_BB (cblc proof pipeline); run with --ignored where they exist"]
 async fn cancelled_member_caller_cannot_drop_queued_owner_before_actual_service_finishes() {
     let dir = tempfile::tempdir().unwrap();
     let (entered, observed) = mpsc::channel();

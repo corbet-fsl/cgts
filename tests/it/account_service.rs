@@ -174,6 +174,7 @@ async fn service<C: Fn() -> u64 + Send + 'static>(
 }
 
 #[tokio::test(flavor = "multi_thread")]
+#[ignore = "needs the authenticated native fixtures: CBLC_PROOF_DIRECTORY and CBLC_BB (cblc proof pipeline); run with --ignored where they exist"]
 async fn original_signed_status_and_live_clock_are_preserved() {
     let dir = tempfile::tempdir().unwrap();
     let member = Member::new();
@@ -235,6 +236,7 @@ async fn original_signed_status_and_live_clock_are_preserved() {
 }
 
 #[tokio::test(flavor = "multi_thread")]
+#[ignore = "needs the authenticated native fixtures: CBLC_PROOF_DIRECTORY and CBLC_BB (cblc proof pipeline); run with --ignored where they exist"]
 async fn cancellation_keeps_the_actual_lease_until_service_completion() {
     let dir = tempfile::tempdir().unwrap();
     let (entered, observed) = mpsc::channel();
@@ -287,6 +289,7 @@ async fn cancellation_keeps_the_actual_lease_until_service_completion() {
 }
 
 #[tokio::test(flavor = "multi_thread")]
+#[ignore = "needs the authenticated native fixtures: CBLC_PROOF_DIRECTORY and CBLC_BB (cblc proof pipeline); run with --ignored where they exist"]
 async fn a_panicked_service_remains_fenced_and_unconfigured_services_refuse() {
     let dir = tempfile::tempdir().unwrap();
     let member = Member::new();
@@ -322,6 +325,7 @@ async fn a_panicked_service_remains_fenced_and_unconfigured_services_refuse() {
 }
 
 #[tokio::test(flavor = "multi_thread")]
+#[ignore = "needs the authenticated native fixtures: CBLC_PROOF_DIRECTORY and CBLC_BB (cblc proof pipeline); run with --ignored where they exist"]
 async fn original_service_scope_and_single_installation_are_checked() {
     let dir = tempfile::tempdir().unwrap();
     let wrong = service(dir.path().join("other"), "other", || 1100).await;
