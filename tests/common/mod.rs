@@ -72,7 +72,7 @@ fn token_for(label: &str, community: &str, id: &str) -> cvch::link::Token {
         .0
 }
 
-fn request(token: &cvch::link::Token, community: &str) -> cvch::link::Request {
+fn request(token: &cvch::link::Token, _community: &str) -> cvch::link::Request {
     let notice = cvch::link::Notice {
         member: "alice".into(),
         nonce: [3; cvch::link::NONCE_BYTES],
